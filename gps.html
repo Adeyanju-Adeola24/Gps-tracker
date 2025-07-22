@@ -1,31 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>GPS Tracker</title><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>
-  body{font-family:Arial;text-align:center;padding:40px;background:#111;color:#fff;}
-  button{background:#0f0;color:#111;border:none;padding:12px 25px;font-size:18px;border-radius:8px;cursor:pointer;}
-  #output{margin-top:25px;font-size:16px;color:#ccc;}
-  .error{color:red;} .success{color:#0f0;} a{color:#0ff;}
-</style></head>
-<body>
-  <h2>📡 GPS Tracker</h2>
-  <p>Tap button and allow location access.</p>
-  <button onclick="getLocation()">📍 Get Location</button>
-  <div id="output"></div>
-<script>
-  function getLocation() {
-    const out=document.getElementById("output");
-    out.innerHTML="⏳ Requesting location...";
-    if(!navigator.geolocation){out.innerHTML="❌ No geolocation support.";return;}
-    navigator.geolocation.getCurrentPosition(success,error,{enableHighAccuracy:true,timeout:15000});
-    function success(pos){
-      const lat=pos.coords.latitude,lon=pos.coords.longitude;
-      out.innerHTML=`✅ Captured!<br>🌍 Lat: ${lat}<br>🌍 Lon: ${lon}<br><br><a href="https://maps.google.com/?q=${lat},${lon}" target="_blank">📍 View in Google Maps</a>`;
+<html>
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>
+   GPS Location App
+  </title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+ </head>
+ <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full text-center">
+   <h1 class="text-2xl font-bold mb-4 text-gray-800">
+    Your GPS Coordinates
+   </h1>
+   <div class="text-gray-600 mb-4" id="status">
+    Requesting location permission...
+   </div>
+   <div class="text-lg font-mono text-gray-900" id="coordinates">
+   </div>
+   <img alt="Illustration of a mobile phone showing GPS location on a map with a location pin icon" class="mx-auto mt-6 rounded-md shadow-md" height="300" src="https://storage.googleapis.com/a1aa/image/c6cc263a-a2d0-4a84-f997-5cb4f3a06981.jpg" width="400"/>
+  </div>
+  <script>
+   function showPosition(position) {
+      const coords = `Latitude: ${position.coords.latitude.toFixed(
+        6
+      )}, Longitude: ${position.coords.longitude.toFixed(6)}`;
+      document.getElementById("status").textContent = "Location found:";
+      document.getElementById("coordinates").textContent = coords;
     }
-    function error(err){
-      if(err.code===1) out.innerHTML="❌ <span class='error'>Permission denied. Enable location and try again.</span>";
-      else out.innerHTML="❌ <span class='error'>Error: "+err.message+"</span>";
+
+    function showError(error) {
+      let message = "";
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          message = "User denied the request for Geolocation.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          message = "Location information is unavailable.";
+          break;
+        case error.TIMEOUT:
+          message = "The request to get user location timed out.";
+          break;
+        default:
+          message = "An unknown error occurred.";
+          break;
+      }
+      document.getElementById("status").textContent = message;
+      document.getElementById("coordinates").textContent = "";
     }
-  }
-</script>
-</body>
-</html>
+
+    function requestLocation() {
+      if (!navigator.geolocation) {
+        document.getElementById("status").textContent =
+          "Geolocation is not supported by your browser.";
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(showPosition, showError, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      });
+    }
+
+    window.addEventListener("load", () => {
+      requestLocation();
+    });
+  </script>
+ </body>
+  </html>
+  
