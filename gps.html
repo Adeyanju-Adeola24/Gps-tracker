@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>GPS Tracker</title><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>
+  body{font-family:Arial;text-align:center;padding:40px;background:#111;color:#fff;}
+  button{background:#0f0;color:#111;border:none;padding:12px 25px;font-size:18px;border-radius:8px;cursor:pointer;}
+  #output{margin-top:25px;font-size:16px;color:#ccc;}
+  .error{color:red;} .success{color:#0f0;} a{color:#0ff;}
+</style></head>
+<body>
+  <h2>📡 GPS Tracker</h2>
+  <p>Tap button and allow location access.</p>
+  <button onclick="getLocation()">📍 Get Location</button>
+  <div id="output"></div>
+<script>
+  function getLocation() {
+    const out=document.getElementById("output");
+    out.innerHTML="⏳ Requesting location...";
+    if(!navigator.geolocation){out.innerHTML="❌ No geolocation support.";return;}
+    navigator.geolocation.getCurrentPosition(success,error,{enableHighAccuracy:true,timeout:15000});
+    function success(pos){
+      const lat=pos.coords.latitude,lon=pos.coords.longitude;
+      out.innerHTML=`✅ Captured!<br>🌍 Lat: ${lat}<br>🌍 Lon: ${lon}<br><br><a href="https://maps.google.com/?q=${lat},${lon}" target="_blank">📍 View in Google Maps</a>`;
+    }
+    function error(err){
+      if(err.code===1) out.innerHTML="❌ <span class='error'>Permission denied. Enable location and try again.</span>";
+      else out.innerHTML="❌ <span class='error'>Error: "+err.message+"</span>";
+    }
+  }
+</script>
+</body>
+</html>
