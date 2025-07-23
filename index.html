@@ -1,78 +1,69 @@
-<!DOCTYPE html><html lang="en"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live GPS Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GPS Tracker Admin</title>
   <style>
     body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
       margin: 0;
-      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #000428, #004e92);
       color: #fff;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
       min-height: 100vh;
-    }h1 {
-  margin-top: 2rem;
-  font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-#location-data {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  margin: 2rem 0;
-  max-width: 90%;
-  text-align: center;
-}
-
-#location-data h2 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-  padding-bottom: 0.5rem;
-}
-
-.data-item {
-  font-size: 1.2rem;
-  margin: 0.5rem 0;
-}
-
-.icon {
-  margin-right: 8px;
-}
-
-#map {
-  width: 90%;
-  height: 300px;
-  border: 3px solid white;
-  border-radius: 20px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-  margin-bottom: 2rem;
-}
-
-footer {
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  opacity: 0.7;
-}
-
+      overflow: hidden;
+    }
+    .dashboard {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    .dashboard h1 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      color: #00ffcc;
+    }
+    .item {
+      margin: 15px 0;
+      font-size: 18px;
+      text-align: left;
+    }
+    .item span {
+      float: right;
+      color: #00ffd5;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #ccc;
+    }
   </style>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
-</head><body>
-  <h1>📍 Live GPS Tracker</h1>
-  <div id="location-data">
-    <h2>Latest Location Info</h2>
-    <div class="data-item" id="latitude">📌 Latitude: </div>
-    <div class="data-item" id="longitude">🧭 Longitude: </div>
-    <div class="data-item" id="timestamp">⏱️ Time: </div>
-  </div>  <div id="map"></div>  <footer>&copy; 2025 GPS Tracker System</footer>  <script>
+</head>
+<body>
+  <div class="dashboard">
+    <h1>🚨 GPS Tracker Admin</h1>
+    <div class="item">Latitude: <span id="latitude">...</span></div>
+    <div class="item">Longitude: <span id="longitude">...</span></div>
+    <div class="item">Speed: <span id="speed">...</span></div>
+    <div class="item">Direction: <span id="direction">...</span></div>
+    <div class="item">Time: <span id="time">...</span></div>
+    <div class="footer">Live Firebase GPS Tracker © 2025</div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+  <script>
+    // Firebase config from your project
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
@@ -80,32 +71,29 @@ footer {
       projectId: "gps-d0bab",
       storageBucket: "gps-d0bab.appspot.com",
       messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc",
     };
 
+    // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function updateDisplay(latitude, longitude, time) {
-      document.getElementById("latitude").textContent = `📌 Latitude: ${latitude}`;
-      document.getElementById("longitude").textContent = `🧭 Longitude: ${longitude}`;
-      document.getElementById("timestamp").textContent = `⏱️ Time: ${new Date(time).toLocaleString()}`;
-    }
+    // DOM elements
+    const latitude = document.getElementById("latitude");
+    const longitude = document.getElementById("longitude");
+    const speed = document.getElementById("speed");
+    const direction = document.getElementById("direction");
+    const time = document.getElementById("time");
 
-    function initMap(lat, lng) {
-      const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
-      const map = new google.maps.Map(document.getElementById("map"), {
-        zoom: 16,
-        center: position
-      });
-      new google.maps.Marker({ position, map });
-    }
-
+    // Realtime listener
     db.ref("location").on("value", (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        updateDisplay(data.latitude, data.longitude, data.time);
-        initMap(data.latitude, data.longitude);
-      }
+      latitude.textContent = data?.latitude ?? "N/A";
+      longitude.textContent = data?.longitude ?? "N/A";
+      speed.textContent = data?.speed ?? "N/A";
+      direction.textContent = data?.direction ?? "N/A";
+      time.textContent = data?.time ?? "N/A";
     });
-  </script></body></html>
+  </script>
+</body>
+</html>
