@@ -1,46 +1,78 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Location Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live GPS Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 40px;
-      background: #f0f0f0;
-    }
-    button {
-      padding: 15px 25px;
-      font-size: 18px;
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #3367d6;
-    }
-    #status {
-      margin-top: 20px;
-      font-weight: bold;
-      color: green;
-    }
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+      margin: 0;
+      padding: 0;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }h1 {
+  margin-top: 2rem;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#location-data {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  margin: 2rem 0;
+  max-width: 90%;
+  text-align: center;
+}
+
+#location-data h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+.data-item {
+  font-size: 1.2rem;
+  margin: 0.5rem 0;
+}
+
+.icon {
+  margin-right: 8px;
+}
+
+#map {
+  width: 90%;
+  height: 300px;
+  border: 3px solid white;
+  border-radius: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  margin-bottom: 2rem;
+}
+
+footer {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
   </style>
-</head>
-<body>
-  <h1>📍 Location Tracker</h1>
-  <p>Click the button below to send your current GPS location to Firebase.</p>
-  <button onclick="sendLocation()">Send My Location</button>
-  <p id="status"></p>
-
-  <!-- Firebase App SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-  <script>
-    // Firebase configuration
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+</head><body>
+  <h1>📍 Live GPS Tracker</h1>
+  <div id="location-data">
+    <h2>Latest Location Info</h2>
+    <div class="data-item" id="latitude">📌 Latitude: </div>
+    <div class="data-item" id="longitude">🧭 Longitude: </div>
+    <div class="data-item" id="timestamp">⏱️ Time: </div>
+  </div>  <div id="map"></div>  <footer>&copy; 2025 GPS Tracker System</footer>  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
@@ -48,43 +80,32 @@
       projectId: "gps-d0bab",
       storageBucket: "gps-d0bab.appspot.com",
       messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc",
-      measurementId: "G-5EX9DF2QKH"
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
     };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    function sendLocation() {
-      const status = document.getElementById("status");
-      status.innerText = "Getting your location...";
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-          const { latitude, longitude } = position.coords;
-          const timestamp = new Date().toISOString();
-          const data = {
-            latitude,
-            longitude,
-            time: timestamp
-          };
-
-          const key = Date.now(); // use timestamp as key
-          firebase.database().ref("locations/" + key).set(data)
-            .then(() => {
-              status.innerText = "✅ Location sent successfully!";
-            })
-            .catch((error) => {
-              status.innerText = "❌ Error sending location: " + error;
-            });
-        }, (error) => {
-          status.innerText = "❌ Location error: " + error.message;
-        });
-      } else {
-        status.innerText = "❌ Geolocation not supported on this device.";
-      }
+    function updateDisplay(latitude, longitude, time) {
+      document.getElementById("latitude").textContent = `📌 Latitude: ${latitude}`;
+      document.getElementById("longitude").textContent = `🧭 Longitude: ${longitude}`;
+      document.getElementById("timestamp").textContent = `⏱️ Time: ${new Date(time).toLocaleString()}`;
     }
-  </script>
-</body>
-</html>
+
+    function initMap(lat, lng) {
+      const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
+      const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 16,
+        center: position
+      });
+      new google.maps.Marker({ position, map });
+    }
+
+    db.ref("location").on("value", (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        updateDisplay(data.latitude, data.longitude, data.time);
+        initMap(data.latitude, data.longitude);
+      }
+    });
+  </script></body></html>
