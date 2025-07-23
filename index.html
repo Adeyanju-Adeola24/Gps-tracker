@@ -1,137 +1,161 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Live GPS Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <!-- Leaflet Map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <title>SmartCheck Location Tracker</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <link href="https://unpkg.com/leaflet/dist/leaflet.css" rel="stylesheet" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      background-color: #111;
-      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      padding: 1em;
     }
-    h1 {
-      text-align: center;
-      padding: 1rem;
-      color: #4ade80;
+    h1 { color: #58a6ff; margin-bottom: 0.5em; }
+    button {
+      padding: 10px 20px;
+      background: #238636;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    #map {
-      height: 400px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #1f1f1f;
-    }
+    button:hover { background: #2ea043; }
+    #status { margin-top: 1em; color: #58a6ff; font-weight: bold; }
+    #admin-panel { display: none; margin-top: 2em; width: 100%; max-width: 900px; }
+    #map { height: 400px; border-radius: 12px; margin-bottom: 1em; }
+    table { width: 100%; border-collapse: collapse; }
     th, td {
       padding: 8px;
-      border: 1px solid #333;
-      text-align: center;
+      border: 1px solid #30363d;
+      text-align: left;
     }
-    th {
-      background: #333;
+    th { background-color: #21262d; color: #58a6ff; }
+    .hidden-login {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0d1117;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 999;
     }
-    .status {
-      text-align: center;
-      padding: 0.5rem;
-      color: #60a5fa;
+    .hidden-login input {
+      padding: 10px;
+      border: 1px solid #30363d;
+      background: #161b22;
+      color: white;
+      border-radius: 5px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
+  <h1>📍 SmartCheck Location Tracker</h1>
+  <button onclick="sendLocation()">Send My Location</button>
+  <div id="status"></div>  <div class="hidden-login" id="login-box">
+    <h2>Enter Admin Password</h2>
+    <input type="password" id="admin-pass" placeholder="Password" onkeydown="checkPassword(event)" />
+  </div>  <div id="admin-panel">
+    <h2>Admin Dashboard</h2>
+    <div id="map"></div>
+    <table>
+      <thead>
+        <tr><th>Timestamp</th><th>Latitude</th><th>Longitude</th><th>Speed</th><th>Direction</th></tr>
+      </thead>
+      <tbody id="location-history"></tbody>
+    </table>
+  </div>  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+      authDomain: "gps-d0bab.firebaseapp.com",
+      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+      projectId: "gps-d0bab",
+      storageBucket: "gps-d0bab.appspot.com",
+      messagingSenderId: "810816177909",
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-<h1>🌍 Live GPS Tracker Dashboard</h1>
-<div class="status" id="status">Initializing...</div>
-<div id="map"></div>
-<table id="historyTable">
-  <thead>
-    <tr>
-      <th>Time</th>
-      <th>Latitude</th>
-      <th>Longitude</th>
-      <th>Speed (km/h)</th>
-      <th>Direction</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+    const deviceId = "device1";
 
-<script>
-  // 🔐 Your Firebase Config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-    authDomain: "gps-d0bab.firebaseapp.com",
-    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-    projectId: "gps-d0bab",
-    storageBucket: "gps-d0bab.appspot.com",
-    messagingSenderId: "810816177909",
-    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-  };
+    function sendLocation() {
+      if (!navigator.geolocation) return alert("GPS not supported");
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude, speed, heading } = position.coords;
+        const timestamp = new Date().toISOString();
+        const direction = heading != null ? heading + "°" : "-";
+        const locationData = { latitude, longitude, speed: speed || 0, direction, timestamp };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+        db.ref(`devices/${deviceId}/latest`).set(locationData);
+        db.ref(`devices/${deviceId}/history/${timestamp}`).set(locationData);
+        db.ref(`devices/${deviceId}/lastSeen`).set(timestamp);
 
-  const deviceId = "device_" + Math.floor(Math.random() * 999999);
-  const historyRef = db.ref('locations/' + deviceId);
+        document.getElementById("status").innerText = "✅ Location sent successfully!";
+      }, err => {
+        alert("Location error: " + err.message);
+      });
+    }
 
-  // Leaflet map setup
-  let map = L.map('map').setView([7.5, 5.2], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap',
-    theme: 'dark'
-  }).addTo(map);
+    function checkPassword(e) {
+      if (e.key === "Enter") {
+        if (document.getElementById("admin-pass").value === "ASCII") {
+          document.getElementById("login-box").style.display = "none";
+          document.getElementById("admin-panel").style.display = "block";
+          initMap();
+        } else {
+          alert("Wrong password");
+        }
+      }
+    }
 
-  let marker = L.marker([7.5, 5.2]).addTo(map);
-  const statusDiv = document.getElementById("status");
+    function initMap() {
+      const map = L.map("map").setView([0, 0], 2);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  function updateLocation(position) {
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-    const speed = (position.coords.speed || 0) * 3.6; // m/s to km/h
-    const direction = position.coords.heading ?? "N/A";
-    const timestamp = new Date().toISOString();
+      const marker = L.marker([0, 0]).addTo(map);
 
-    const data = { latitude: lat, longitude: lon, speed: speed.toFixed(1), direction, timestamp };
-    historyRef.push(data);
+      const ref = db.ref(`devices/${deviceId}`);
+      ref.on("value", snapshot => {
+        const data = snapshot.val();
+        if (!data) return;
 
-    // Update UI
-    marker.setLatLng([lat, lon]);
-    map.setView([lat, lon], 15);
-    statusDiv.textContent = `Tracking active: ${lat.toFixed(5)}, ${lon.toFixed(5)} @ ${speed.toFixed(1)} km/h`;
+        const latest = data.latest;
+        if (latest) {
+          marker.setLatLng([latest.latitude, latest.longitude]);
+          map.setView([latest.latitude, latest.longitude], 15);
+        }
 
-    // Add to table
-    const table = document.getElementById("historyTable").getElementsByTagName('tbody')[0];
-    const row = table.insertRow(0);
-    row.innerHTML = `
-      <td>${new Date(timestamp).toLocaleTimeString()}</td>
-      <td>${lat.toFixed(5)}</td>
-      <td>${lon.toFixed(5)}</td>
-      <td>${speed.toFixed(1)}</td>
-      <td>${direction}</td>
-    `;
-  }
-
-  function showError(err) {
-    statusDiv.textContent = "GPS Error: " + err.message;
-  }
-
-  if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(updateLocation, showError, {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 10000
-    });
-  } else {
-    statusDiv.textContent = "Geolocation not supported on this device.";
-  }
-</script>
-
-</body>
-</html>
+        const history = data.history || {};
+        const tbody = document.getElementById("location-history");
+        tbody.innerHTML = "";
+        Object.keys(history).reverse().forEach(time => {
+          const entry = history[time];
+          tbody.innerHTML += `<tr>
+            <td>${time}</td>
+            <td>${entry.latitude}</td>
+            <td>${entry.longitude}</td>
+            <td>${entry.speed}</td>
+            <td>${entry.direction}</td>
+          </tr>`;
+        });
+      });
+    }
+  </script></body>
+  </html>
