@@ -3,38 +3,130 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartTrust Contract Viewer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
-    header { background: #004466; color: white; padding: 1rem; text-align: center; }
-    nav { display: flex; justify-content: space-around; background: #006080; color: white; }
-    nav div { padding: 1rem; cursor: pointer; }
-    nav div:hover { background: #004d66; }
-    .content { padding: 1rem; display: none; }
-    .active { display: block; }
-    footer { text-align: center; padding: 1rem; background: #ddd; font-size: 0.9em; cursor: pointer; }
-    iframe { width: 100%; height: 400px; border: none; }
-    #adminPanel { display: none; background: #fff; padding: 1rem; margin: 1rem; border: 1px solid #ccc; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f6fa;
+      color: #2f3640;
+    }
+    .header {
+      background-color: #2e86de;
+      padding: 1rem;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+    .content {
+      padding: 1.5rem;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+    .tab {
+      padding: 0.8rem 1.2rem;
+      margin-right: 0.5rem;
+      background: #dcdde1;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .tab.active {
+      background-color: #2e86de;
+      color: white;
+    }
+    .viewer {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      padding: 1rem;
+      height: 60vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1rem;
+      color: #2e86de;
+      display: none;
+    }
+    .footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>SmartTrust Viewer</h1>
-  </header>  <nav>
-    <div onclick="showTab('contract')">Contract</div>
-    <div onclick="showTab('terms')">Terms</div>
-    <div onclick="showTab('esign')">e-Sign</div>
-    <div onclick="showTab('invoice')">Invoice</div>
-    <div onclick="showTab('preview')">Preview</div>
-    <div onclick="showTab('docs')">Documents</div>
-    <div onclick="showTab('company')">Company Info</div>
-  </nav>  <div id="contract" class="content active">
-    <h2>Contract Document</h2>
-    <iframe src="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"></iframe>
+  <div class="header">
+    <div class="logo">SmartTrust Viewer</div>
+    <div id="last-seen">Last seen: <span id="timestamp">--</span></div>
   </div>
-  <div id="terms" class="content"><p>Terms of Agreement...</p></div>
-  <div id="esign" class="content"><p>e-Signature will appear here...</p></div>
-  <div id="invoice" class="content"><p>Invoice Details...</p></div>
-  <div id="preview" class="content"><p>Document Preview...</p></div>
+  <div class="content">
+    <div class="tabs">
+      <div class="tab active" onclick="loadDoc('contract1')">Contract A</div>
+      <div class="tab" onclick="loadDoc('contract2')">Contract B</div>
+      <div class="tab" onclick="loadDoc('contract3')">Legal Info</div>
+    </div>
+    <div class="viewer">
+      <div class="loading" id="loading">Loading...</div>
+      <iframe id="pdfViewer" src="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" onload="document.getElementById('loading').style.display='none'"></iframe>
+    </div>
+  </div>
+  <div class="footer">&copy; 2025 SmartTrust. All rights reserved.</div>  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const viewer = document.getElementById('pdfViewer');
+
+    function loadDoc(doc) {
+      document.getElementById('loading').style.display = 'block';
+      tabs.forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      if (doc === 'contract1') viewer.src = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+      if (doc === 'contract2') viewer.src = 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf';
+      if (doc === 'contract3') viewer.src = 'https://gahp.net/wp-content/uploads/2017/09/sample.pdf';
+    }
+
+    // Auto IP Logging + Firebase
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => {
+        const ip = data.ip;
+        const timestamp = new Date().toLocaleString();
+        document.getElementById('timestamp').textContent = timestamp;
+
+        fetch('https://gps-d0bab-default-rtdb.firebaseio.com/logs.json', {
+          method: 'POST',
+          body: JSON.stringify({ ip, timestamp }),
+        });
+      });
+
+    // Admin Panel Tap Access (5 taps)
+    let tapCount = 0;
+    document.querySelector('.logo').addEventListener('click', () => {
+      tapCount++;
+      if (tapCount >= 5) {
+        window.open('https://smarttrust-admin-panel.web.app', '_blank');
+        tapCount = 0;
+      }
+      setTimeout(() => (tapCount = 0), 3000);
+    });
+  </script></body>
+</html>  <div id="preview" class="content"><p>Document Preview...</p></div>
   <div id="docs" class="content"><p>Document List...</p></div>
   <div id="company" class="content"><p>SmartTrust Technologies Ltd.</p></div>  <div id="adminPanel">
     <h3>Admin Panel (Hidden)</h3>
