@@ -1,76 +1,54 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartTrust Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      margin: 0;
+      background: #f5f5f5;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f2f2f2;
-      color: #333;
+      margin: 0; padding: 0;
     }
-    header {
-      background: linear-gradient(to right, #0b0c2a, #1f2d50);
+    .header {
+      background: #1c1c1c;
       color: white;
-      padding: 20px;
+      padding: 15px;
       text-align: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
     .content {
       padding: 30px;
-      max-width: 900px;
+      max-width: 800px;
       margin: auto;
       background: white;
-      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-      margin-top: 40px;
-      position: relative;
+      margin-top: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
     .contract-title {
-      font-size: 24px;
-      color: #1f2d50;
-      margin-bottom: 10px;
-    }
-    .contract-meta {
-      font-size: 14px;
-      margin-bottom: 20px;
-      color: #666;
-    }
-    .section {
-      margin-bottom: 25px;
-    }
-    .section-title {
+      font-size: 20px;
       font-weight: bold;
-      margin-bottom: 5px;
-      color: #333;
+      margin-top: 20px;
     }
-    .coords {
-      position: absolute;
-      bottom: 10px;
-      right: 20px;
-      font-size: 12px;
-      color: #888;
-    }
-    footer {
+    .footer {
       text-align: center;
-      font-size: 12px;
+      margin-top: 50px;
       color: #888;
-      padding: 30px 10px;
     }
-    #adminBtnArea {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      height: 60px;
+    .location-box {
+      margin-top: 30px;
+      background: #f0f0f0;
+      padding: 15px;
+      border-left: 5px solid #00b894;
+      font-family: monospace;
     }
+
+    /* Admin Panel (hidden by default) */
     .admin-panel {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #0e0e0e;
       color: white;
       padding: 30px;
       overflow-y: auto;
@@ -79,15 +57,15 @@
     .admin-panel h2 {
       color: #00ffcc;
     }
-    .admin-panel table {
+    table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
-      font-size: 14px;
     }
-    .admin-panel table, .admin-panel th, .admin-panel td {
-      border: 1px solid #999;
+    th, td {
+      border: 1px solid #777;
       padding: 8px;
+      font-size: 14px;
     }
     .btn {
       background: #00ffcc;
@@ -98,121 +76,156 @@
       cursor: pointer;
     }
     .hidden-input {
-      background: black;
-      border: 1px solid #00ffcc;
-      color: #00ffcc;
-      padding: 10px;
-      width: 100%;
-      font-size: 16px;
-      margin-top: 20px;
+      display: none;
+    }
+    #loginBox {
+      background: #222;
+      color: white;
+      padding: 20px;
+      width: 300px;
+      margin: 100px auto;
+      text-align: center;
+      display: none;
+      box-shadow: 0 0 10px #00ffcc;
+    }
+    input[type="password"] {
+      padding: 8px;
+      width: 90%;
+      margin: 10px 0;
     }
   </style>
 </head>
-<body><header>
-  <h1>SmartTrust Viewer</h1>
-  <p>Last seen: 8/1/2025, 11:43:41 PM</p>
-</header><div class="content">
+<body>
+
+<div class="header">
+  <h2>SmartTrust Viewer</h2>
+  <p>Last seen: <span id="lastSeen">Loading...</span></p>
+</div>
+
+<div class="content" id="viewerContent">
+  <p><strong>Contract A</strong><br>
+  <strong>Contract B</strong><br>
+  <strong>Legal Info</strong></p>
+
   <div class="contract-title">SmartCheck Contract Viewer</div>
-  <div class="contract-meta">
-    Document: SC-024/NGX-CON<br>
-    Status: Active<br>
-    Issued by: National Blockchain Governance Unit<br>
-    Effective Date: August 1, 2025<br>
-    Parties: GlobalChain Inc. and SmartCheck Solutions<br>
-    [Digital Signature Verified ✅]
-  </div>  <div class="section">
-    <div class="section-title">Section 1: Terms & Conditions</div>
-    This Agreement outlines the rights and responsibilities of both parties.
+  <p><strong>Document:</strong> SC-024/NGX-CON</p>
+  <p><strong>Status:</strong> Active</p>
+  <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
+  <p><strong>Effective Date:</strong> August 1, 2025</p>
+  <p><strong>Parties Involved:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
+
+  <div class="location-box" id="locationBox">
+    Lat: <span id="lat">...</span>, Lng: <span id="lng">...</span>
   </div>
-  <div class="section">
-    <div class="section-title">Section 2: Payment Schedule</div>
-    Payments will be made quarterly and subject to review.
-  </div>
-  <div class="section">
-    <div class="section-title">Section 3: Liability Clause</div>
-    Both parties agree to indemnify each other against third-party claims.
-  </div>
-  <div class="section">
-    <div class="section-title">Section 4: Signature Authorization</div>
-    This agreement becomes valid upon digital signature confirmation.
-  </div>  <div class="coords">
-    Lat: <span id="lat">Loading...</span>, Lng: <span id="lng">Loading...</span>
-  </div>
-</div><div id="adminBtnArea" onclick="handleTap()"></div><div class="admin-panel" id="adminPanel">
+</div>
+
+<div class="footer">
+  <p>© 2025 SmartTrust. All rights reserved.</p>
+</div>
+
+<!-- Hidden Admin Panel -->
+<div id="loginBox">
+  <h3>Admin Login</h3>
+  <input type="password" id="adminPass" placeholder="Enter password" />
+  <button class="btn" onclick="verifyLogin()">Enter</button>
+</div>
+
+<div class="admin-panel" id="adminPanel">
   <h2>Admin Panel – Location Logs</h2>
-  <input type="password" placeholder="Enter Password" class="hidden-input" id="adminPass">
-  <button class="btn" onclick="checkPassword()">Enter</button>
-  <div id="logArea" style="display: none;">
-    <button class="btn" onclick="clearLogs()">🗑 Clear Logs</button>
-    <button class="btn" onclick="exportLogs()">📁 Export CSV</button>
-    <table id="logTable">
-      <thead>
-        <tr><th>Time</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Direction</th><th>Device</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div><footer>
-  <p>SmartTrust Technologies Ltd.<br>© 2025 SmartTrust. All rights reserved.</p>
-</footer><script>
-let tapCount = 0;
-let tapTimeout;
+  <button class="btn" onclick="clearLogs()">🗑 Clear Logs</button>
+  <button class="btn" onclick="exportCSV()">📁 Export CSV</button>
+  <table>
+    <thead>
+      <tr><th>Time</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Direction</th></tr>
+    </thead>
+    <tbody id="logTable"></tbody>
+  </table>
+</div>
 
-function handleTap() {
-  tapCount++;
-  clearTimeout(tapTimeout);
-  tapTimeout = setTimeout(() => tapCount = 0, 1500);
-  if (tapCount >= 5) {
-    document.getElementById('adminPanel').style.display = 'block';
-  }
-}
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-database-compat.js"></script>
 
-function checkPassword() {
-  const pass = document.getElementById('adminPass').value;
-  if (pass === 'ASCII') {
-    document.getElementById('logArea').style.display = 'block';
-  } else {
-    alert('Wrong password');
-  }
-}
+<script>
+  // Firebase config (replace with yours)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+    authDomain: "gps-d0bab.firebaseapp.com",
+    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+    projectId: "gps-d0bab",
+    storageBucket: "gps-d0bab.appspot.com",
+    messagingSenderId: "810816177909",
+    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-function clearLogs() {
-  document.querySelector('#logTable tbody').innerHTML = '';
-}
+  const locationRef = db.ref("locations");
 
-function exportLogs() {
-  let csv = 'Time,Lat,Lng,Speed,Direction,Device\n';
-  document.querySelectorAll('#logTable tbody tr').forEach(row => {
-    csv += Array.from(row.cells).map(cell => cell.textContent).join(',') + '\n';
+  // Viewer location
+  locationRef.limitToLast(1).on("child_added", (snap) => {
+    const data = snap.val();
+    document.getElementById("lat").textContent = data.lat || "N/A";
+    document.getElementById("lng").textContent = data.lng || "N/A";
+    document.getElementById("lastSeen").textContent = new Date(data.timestamp).toLocaleString();
   });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'location_logs.csv';
-  link.click();
-}
 
-function updateCoords() {
-  fetch('https://gps-d0bab-default-rtdb.firebaseio.com/logs.json')
-    .then(res => res.json())
-    .then(data => {
-      const keys = Object.keys(data || {}).reverse();
-      const latest = data[keys[0]];
-      document.getElementById('lat').textContent = latest.lat;
-      document.getElementById('lng').textContent = latest.lng;
+  // Admin panel logs
+  locationRef.on("child_added", (snap) => {
+    const d = snap.val();
+    const row = `<tr>
+      <td>${new Date(d.timestamp).toLocaleString()}</td>
+      <td>${d.lat}</td>
+      <td>${d.lng}</td>
+      <td>${d.speed || "0"}</td>
+      <td>${d.direction || "N/A"}</td>
+    </tr>`;
+    document.getElementById("logTable").innerHTML += row;
+  });
 
-      const tbody = document.querySelector('#logTable tbody');
-      tbody.innerHTML = '';
-      keys.forEach(k => {
-        const row = data[k];
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${row.time}</td><td>${row.lat}</td><td>${row.lng}</td><td>${row.speed}</td><td>${row.direction}</td><td>${row.device}</td>`;
-        tbody.appendChild(tr);
+  // Admin reveal logic
+  let tapCount = 0;
+  document.body.addEventListener("click", () => {
+    tapCount++;
+    if (tapCount >= 5) {
+      document.getElementById("loginBox").style.display = "block";
+      tapCount = 0;
+    }
+    setTimeout(() => tapCount = 0, 4000);
+  });
+
+  function verifyLogin() {
+    const pass = document.getElementById("adminPass").value;
+    if (pass === "ASCII") {
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("adminPanel").style.display = "block";
+    } else {
+      alert("Wrong password");
+    }
+  }
+
+  function clearLogs() {
+    if (confirm("Clear all logs?")) {
+      locationRef.remove();
+      document.getElementById("logTable").innerHTML = "";
+    }
+  }
+
+  function exportCSV() {
+    let csv = "Time,Lat,Lng,Speed,Direction\n";
+    locationRef.once("value", (snap) => {
+      snap.forEach(child => {
+        const d = child.val();
+        csv += `"${new Date(d.timestamp).toLocaleString()}","${d.lat}","${d.lng}","${d.speed || 0}","${d.direction || 'N/A'}"\n`;
       });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "logs.csv";
+      a.click();
     });
-}
-
-updateCoords();
-setInterval(updateCoords, 60000);
-</script></body>
-        </html>
+  }
+</script>
+</body>
+    </html>
