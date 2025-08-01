@@ -6,35 +6,168 @@
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #111;
-      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+      color: #333;
     }
     header {
-      background: #00ffcc;
-      color: #000;
-      padding: 15px 20px;
-      font-size: 22px;
-      font-weight: bold;
-    }
-    .tabs {
+      background-color: #2e86de;
+      color: white;
+      padding: 1rem 2rem;
       display: flex;
-      background: #222;
-      padding: 10px;
-      justify-content: space-around;
+      justify-content: space-between;
+      align-items: center;
     }
-    .tab {
-      background: #333;
-      color: #fff;
-      padding: 10px 20px;
+    header h1 {
+      margin: 0;
+    }
+    nav {
+      background: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      gap: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    nav button {
+      background: none;
+      border: none;
+      font-weight: bold;
       cursor: pointer;
-      border-radius: 5px;
-    }
-    .tab.active {
-      background-color: #00ffcc;
-      color: #000;
     }
     .content {
+      padding: 2rem;
+    }
+    .doc {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: auto;
+    }
+    .footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    /* Hidden admin panel */
+    .admin-trigger {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      width: 50px;
+      height: 50px;
+    }
+    .admin-panel {
+      display: none;
+      position: fixed;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111;
+      color: white;
+      width: 90%;
+      max-width: 1000px;
+      height: 80vh;
+      border-radius: 12px;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 9999;
+      box-shadow: 0 0 15px rgba(0,255,255,0.4);
+      animation: fadeIn 0.4s ease;
+    }
+    .admin-panel h2 {
+      color: #00ffcc;
+      text-align: center;
+    }
+    .admin-panel table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .admin-panel th, .admin-panel td {
+      border: 1px solid #888;
+      padding: 8px;
+      text-align: left;
+    }
+    .admin-panel .btn {
+      background: #00ffcc;
+      color: #000;
+      border: none;
+      padding: 10px 15px;
+      margin: 10px 5px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SmartTrust Viewer</h1>
+    <span>Last seen: <span id="lastSeen"></span></span>
+  </header>
+  <nav>
+    <button onclick="showDoc('A')">Contract A</button>
+    <button onclick="showDoc('B')">Contract B</button>
+    <button onclick="showDoc('legal')">Legal Info</button>
+  </nav>  <div class="content">
+    <div class="doc" id="contractContent">
+      <h2>Document: SC-024/NGX-CON</h2>
+      <p>Status: <strong>Active</strong></p>
+      <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
+      <p><strong>Effective Date:</strong> August 1, 2025</p>
+      <p><strong>Parties:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
+      <h3>Content Preview:</h3>
+      <ul>
+        <li>Section 1: Terms & Conditions...</li>
+        <li>Section 2: Payment Schedule...</li>
+        <li>Section 3: Liability Clause...</li>
+        <li>Section 4: Signature Authorization...</li>
+      </ul>
+      <p>[Digital Signature Verified ✅]</p>
+      <p>This app lets you preview digital contracts and agreements for legal purposes.</p>
+    </div>
+  </div>  <div class="footer">© 2025 SmartTrust Technologies Ltd. All rights reserved.</div>  <!-- Invisible tap zone --><button class="admin-trigger" onclick="tap()"></button>
+
+  <!-- Admin Panel -->  <div class="admin-panel" id="adminPanel">
+    <h2>Admin Panel</h2>
+    <button class="btn" onclick="exportLogs()">Export Logs</button>
+    <table>
+      <thead>
+        <tr><th>IP Address</th><th>City</th><th>Time</th></tr>
+      </thead>
+      <tbody id="logTable">
+        <tr><td>192.168.0.1</td><td>Lagos</td><td>12:04 AM</td></tr>
+        <!-- Dynamic rows -->
+      </tbody>
+    </table>
+  </div>  <script>
+    let taps = 0;
+    function tap() {
+      taps++;
+      if (taps >= 5) {
+        document.getElementById('adminPanel').style.display = 'block';
+        taps = 0;
+      }
+    }
+    function showDoc(type) {
+      const el = document.getElementById('contractContent');
+      el.innerHTML = `<h2>Document ${type}</h2><p>Loading ${type} content...</p>`;
+    }
+    function exportLogs() {
+      alert("Exported log.csv ✔");
+    }
+    document.getElementById('lastSeen').textContent = new Date().toLocaleString();
+  </script></body>
+</html>    .content {
       padding: 20px;
     }
     .footer {
