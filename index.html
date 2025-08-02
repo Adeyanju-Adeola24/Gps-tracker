@@ -1,139 +1,100 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Client Project Portal</title>
+  <meta charset="UTF-8">
   <style>
     body {
-      font-family: "Segoe UI", sans-serif;
+      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f7f7f7;
-    }
-    header {
-      background: #1a1a1a;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    main {
-      padding: 30px;
-      max-width: 900px;
-      margin: auto;
-    }
-    h2 {
-      margin-top: 40px;
+      background: #f4f4f4;
       color: #333;
     }
-    .section {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 30px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
-    .hidden {
-      display: none;
-    }
-    #admin-login {
-      text-align: center;
-      margin-top: 20px;
-    }
-    input[type="password"], input[type="text"] {
-      padding: 10px;
-      margin-top: 10px;
-      border: 1px solid #ccc;
-      width: 100%;
-      border-radius: 6px;
-    }
-    button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      background: #1a73e8;
+    header {
+      background-color: #222;
       color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      padding: 1rem;
+      text-align: center;
+    }
+    .section {
+      padding: 2rem;
+      text-align: center;
+    }
+    .admin-panel {
+      display: none;
+      background: white;
+      margin: 2rem;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 1rem;
     }
     th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      text-align: center;
     }
     th {
-      background: #f0f0f0;
+      background: #444;
+      color: white;
     }
-    #map {
-      height: 400px;
-      width: 100%;
-      border-radius: 12px;
+    #tapTarget {
+      height: 100px;
     }
-    .export-btn {
-      background: #28a745;
+    .filter-date {
+      margin-top: 1rem;
+    }
+    .hidden-login {
+      display: none;
+    }
+    .export-button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <header id="header">
+  <header id="tapTarget">
     <h1>Client Project Portal</h1>
+    <p>Client Requirements<br>
+    All specifications must be approved and timestamped.<br><br>
+    Terms and Review<br>
+    Final review will be automatically saved and verified upon access.<br><br>
+    Legal & Compliance<br>
+    Ensure full adherence to documentation agreements.</p>
   </header>
 
-  <main>
-    <div class="section" id="terms">
-      <h2>Client Requirements</h2>
-      <p>All specifications must be approved and timestamped.</p>
-    </div>
+  <div class="section">
+    <h2>Locations</h2>
+    <p>Latitude / Longitude logs</p>
+  </div>
 
-    <div class="section">
-      <h2>Terms and Review</h2>
-      <p>Final review will be automatically saved and verified upon access.</p>
-    </div>
+  <div class="hidden-login" id="loginPrompt">
+    <p>Enter Admin Password:</p>
+    <input type="password" id="adminPass" placeholder="Password"/>
+    <button onclick="checkPassword()">Login</button>
+  </div>
 
-    <div class="section">
-      <h2>Legal & Compliance</h2>
-      <p>Ensure full adherence to documentation agreements.</p>
-    </div>
+  <div class="admin-panel" id="adminPanel">
+    <h2>Admin Dashboard</h2>
+    <input type="date" id="filterDate" class="filter-date" />
+    <button class="export-button" onclick="exportToCSV()">Export as CSV</button>
+    <div id="logTableContainer"></div>
+  </div>
 
-    <div class="section">
-      <h2>Locations</h2>
-      <div id="map"></div>
-    </div>
-
-    <!-- Hidden admin login trigger -->
-    <div id="admin-trigger" style="text-align:center; margin-top:20px; color: transparent;">.</div>
-
-    <!-- Admin login -->
-    <div id="admin-login" class="hidden">
-      <h3>Enter password to access admin panel:</h3>
-      <input type="password" id="admin-password" placeholder="Enter password (e.g. ASCII)" />
-      <button onclick="checkAdminPassword()">Enter</button>
-    </div>
-
-    <!-- Admin Dashboard -->
-    <div id="admin-panel" class="hidden section">
-      <h2>Admin Dashboard</h2>
-      <input type="text" id="search" placeholder="Search by device or location..." />
-      <button class="export-btn" onclick="exportCSV()">Export as CSV</button>
-      <p id="log-count">Daily logs: 0</p>
-      <label>-- Filter by date --</label>
-      <input type="date" id="dateFilter" onchange="filterByDate()" />
-      <table>
-        <thead>
-          <tr><th>Device</th><th>Latitude</th><th>Longitude</th><th>Timestamp</th></tr>
-        </thead>
-        <tbody id="logTable"></tbody>
-      </table>
-    </div>
-  </main>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script>
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
@@ -146,119 +107,85 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Load data to map
-    let map;
-    function initMap() {
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 7.5, lng: 5.2 },
-        zoom: 8,
-      });
-
-      db.ref('locations').on('value', (snapshot) => {
-        map.data.forEach(f => map.data.remove(f));
-        const data = snapshot.val();
-        if (!data) return;
-
-        for (const deviceId in data) {
-          for (const logId in data[deviceId]) {
-            const entry = data[deviceId][logId];
-            if (entry.lat && entry.lng) {
-              new google.maps.Marker({
-                position: { lat: entry.lat, lng: entry.lng },
-                map: map,
-                title: deviceId,
-              });
-            }
-          }
-        }
-      });
-    }
-
-    // Tap 5x to reveal login
+    // Tap detection
     let tapCount = 0;
-    document.getElementById("header").addEventListener("click", () => {
+    const tapTarget = document.getElementById('tapTarget');
+    tapTarget.addEventListener('click', () => {
       tapCount++;
       if (tapCount >= 5) {
-        document.getElementById("admin-login").classList.remove("hidden");
+        document.getElementById('loginPrompt').style.display = 'block';
         tapCount = 0;
       }
     });
 
-    function checkAdminPassword() {
-      const pass = document.getElementById("admin-password").value;
-      if (pass === "ASCII") {
+    function checkPassword() {
+      const input = document.getElementById('adminPass').value;
+      if (input === "ASCII") {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('loginPrompt').style.display = 'none';
         loadLogs();
-        document.getElementById("admin-panel").classList.remove("hidden");
-        document.getElementById("admin-login").classList.add("hidden");
       } else {
         alert("Wrong password");
       }
     }
 
-    let allLogs = [];
     function loadLogs() {
-      db.ref('locations').once('value', snapshot => {
-        const data = snapshot.val();
-        const logTable = document.getElementById("logTable");
-        logTable.innerHTML = "";
-        allLogs = [];
+      const logsRef = db.ref("locations");
+      logsRef.on("value", snapshot => {
+        const logs = [];
+        snapshot.forEach(child => {
+          const entry = child.val();
+          logs.push({
+            device: child.key,
+            lat: entry.lat || 'undefined',
+            lng: entry.lng || 'undefined',
+            timestamp: entry.timestamp || 'Invalid Date'
+          });
+        });
 
-        if (!data) return;
+        const selectedDate = document.getElementById("filterDate").value;
+        const filtered = selectedDate
+          ? logs.filter(log => new Date(log.timestamp).toISOString().slice(0,10) === selectedDate)
+          : logs;
 
-        for (const device in data) {
-          for (const id in data[device]) {
-            const entry = data[device][id];
-            const row = {
-              device: device,
-              lat: entry.lat ?? "undefined",
-              lng: entry.lng ?? "undefined",
-              timestamp: entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "Invalid Date",
-            };
-            allLogs.push(row);
-          }
-        }
-        document.getElementById("log-count").innerText = `Daily logs: ${allLogs.length}`;
-        displayLogs(allLogs);
+        renderTable(filtered);
       });
     }
 
-    function displayLogs(logs) {
-      const logTable = document.getElementById("logTable");
-      logTable.innerHTML = "";
-      logs.forEach(l => {
-        logTable.innerHTML += `
-          <tr>
-            <td>${l.device}</td>
-            <td>${l.lat}</td>
-            <td>${l.lng}</td>
-            <td>${l.timestamp}</td>
-          </tr>`;
+    function renderTable(data) {
+      const container = document.getElementById("logTableContainer");
+      let html = `
+        <table>
+          <tr><th>Device</th><th>Latitude</th><th>Longitude</th><th>Timestamp</th></tr>
+      `;
+      data.forEach(entry => {
+        html += `<tr>
+          <td>${entry.device}</td>
+          <td>${entry.lat}</td>
+          <td>${entry.lng}</td>
+          <td>${entry.timestamp}</td>
+        </tr>`;
       });
+      html += `</table>`;
+      container.innerHTML = html;
     }
 
-    function filterByDate() {
-      const selectedDate = document.getElementById("dateFilter").value;
-      if (!selectedDate) return displayLogs(allLogs);
-
-      const filtered = allLogs.filter(l => l.timestamp.includes(selectedDate));
-      displayLogs(filtered);
-    }
-
-    function exportCSV() {
-      let csv = "Device,Latitude,Longitude,Timestamp\n";
-      allLogs.forEach(l => {
-        csv += `${l.device},${l.lat},${l.lng},${l.timestamp}\n`;
+    function exportToCSV() {
+      const rows = document.querySelectorAll("table tr");
+      let csv = "";
+      rows.forEach(row => {
+        const cols = row.querySelectorAll("th, td");
+        const values = Array.from(cols).map(col => `"${col.innerText}"`).join(",");
+        csv += values + "\n";
       });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "gps_logs.csv";
-      a.click();
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "location_logs.csv";
+      link.click();
     }
-  </script>
-  <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw&callback=initMap">
+
+    document.getElementById("filterDate").addEventListener("change", loadLogs);
   </script>
 </body>
-                                                                                               </html>
+  </html>
