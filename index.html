@@ -1,66 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client Project Portal</title>
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { background: #f9f9f9; padding: 20px; }
-    .section { margin-bottom: 25px; }
-    h2 { font-size: 22px; color: #222; margin-bottom: 10px; }
-    p { color: #555; line-height: 1.5; font-size: 15px; }
-    #adminLogin, #adminPanel { display: none; margin-top: 20px; }
-    #map { width: 100%; height: 300px; border-radius: 8px; margin: 10px 0; }
-    input, button, select {
-      padding: 10px; margin: 10px 0; width: 100%; border: 1px solid #ccc;
-      border-radius: 6px; font-size: 14px;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
     }
-    table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 14px; }
-    th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
-    th { background-color: #f0f0f0; }
-    .hidden { display: none; }
-    .tap-area { height: 50vh; }
-    .fadeIn { animation: fade 0.6s ease-in; }
-    @keyframes fade {
-      from { opacity: 0; transform: scale(0.98); }
-      to { opacity: 1; transform: scale(1); }
+    header {
+      background: #111;
+      color: #fff;
+      padding: 10px 20px;
+      text-align: center;
+      font-weight: bold;
     }
-    .highlight { color: #0056b3; font-weight: bold; }
+    .hidden-admin {
+      display: none;
+      padding: 20px;
+    }
+    .viewer {
+      padding: 30px;
+      background: #fff;
+      text-align: center;
+      font-size: 1.2em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    .map {
+      height: 300px;
+      margin-top: 20px;
+    }
+    #filterDate, #searchInput {
+      margin: 10px;
+      padding: 8px;
+    }
+    .hidden-login {
+      display: none;
+    }
   </style>
 </head>
 <body>
-
-  <div class="section tap-area" id="publicPortal">
-    <h2>Client Project Portal</h2>
-    <p><span class="highlight">Client Requirements</span><br>
-      All specifications must be approved and timestamped.</p>
-
-    <p><span class="highlight">Terms and Review</span><br>
-      Final review will be automatically saved and verified upon access.</p>
-
-    <p><span class="highlight">Legal & Compliance</span><br>
-      Ensure full adherence to documentation agreements.</p>
-  </div>
-
-  <div id="adminLogin" class="fadeIn">
-    <h2>Enter password to access admin panel:</h2>
-    <input type="password" id="adminPass" placeholder="Enter password (e.g. ASCII)" />
-    <button onclick="verifyPassword()">Enter</button>
-  </div>
-
-  <div id="adminPanel" class="fadeIn">
+  <header onclick="tapSecret()">Client Project Portal</header>  <div class="viewer">
+    <p><strong>Client Requirements</strong></p>
+    <p>All specifications must be approved and timestamped.</p>
+    <p><strong>Terms and Review</strong></p>
+    <p>Final review will be automatically saved and verified upon access.</p>
+    <p><strong>Legal & Compliance</strong></p>
+    <p>Ensure full adherence to documentation agreements.</p>
+  </div>  <div class="hidden-login" id="loginPrompt">
+    <input type="password" placeholder="Enter password" id="passwordInput" />
+    <button onclick="checkPassword()">Login</button>
+  </div>  <div class="hidden-admin" id="adminPanel">
     <h2>Admin Dashboard</h2>
-    <input type="text" id="searchBox" placeholder="Search by device or location..." />
+    <input type="text" id="searchInput" placeholder="Search by device or location..." />
+    <input type="date" id="filterDate" />
     <button onclick="exportCSV()">Export as CSV</button>
-    <p>Daily logs: <span id="dailyCount">0</span></p>
-
-    <select id="dateFilter" onchange="filterByDate()">
-      <option value="">-- Filter by date --</option>
-    </select>
-
-    <div id="map"></div>
-    <table id="dataTable">
+    <p id="logCount">Daily logs: 0</p>
+    <div class="map" id="map"></div>
+    <table>
       <thead>
         <tr>
           <th>Device</th>
@@ -69,17 +81,9 @@
           <th>Timestamp</th>
         </tr>
       </thead>
-      <tbody id="logTable">
-        <tr><td colspan="4">Loading...</td></tr>
-      </tbody>
+      <tbody id="logTable"></tbody>
     </table>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw"></script>
-
-  <script>
+  </div>  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
@@ -89,116 +93,85 @@
       messagingSenderId: "810816177909",
       appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     let tapCount = 0;
-    document.body.addEventListener('click', () => {
+    function tapSecret() {
       tapCount++;
-      if (tapCount === 5) {
-        document.getElementById('adminLogin').style.display = 'block';
-      }
-    });
-
-    function verifyPassword() {
-      const pass = document.getElementById('adminPass').value;
-      if (pass === "ASCII") {
-        document.getElementById('adminLogin').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'block';
-        fetchData();
-      } else {
-        alert("Wrong password");
+      if (tapCount >= 5) {
+        document.getElementById("loginPrompt").style.display = "block";
       }
     }
 
-    function fetchData() {
-      const ref = db.ref("locations");
-      const logTable = document.getElementById("logTable");
-      const dateFilter = document.getElementById("dateFilter");
-      const map = new google.maps.Map(document.getElementById("map"), {
-        zoom: 3,
-        center: { lat: 0, lng: 0 },
-      });
+    function checkPassword() {
+      const pwd = document.getElementById("passwordInput").value;
+      if (pwd === "ASCII") {
+        document.getElementById("adminPanel").style.display = "block";
+        document.getElementById("loginPrompt").style.display = "none";
+        loadLogs();
+      } else {
+        alert("Wrong password!");
+      }
+    }
 
-      ref.on("value", snapshot => {
+    function loadLogs() {
+      const table = document.getElementById("logTable");
+      const logCount = document.getElementById("logCount");
+      db.ref("locations").on("value", snapshot => {
         const data = snapshot.val();
-        logTable.innerHTML = '';
-        const uniqueDates = new Set();
-        let dailyCount = 0;
-
-        for (let key in data) {
-          const entry = data[key];
-          const row = document.createElement("tr");
-
-          const date = new Date(entry.timestamp).toLocaleDateString();
-          uniqueDates.add(date);
-
-          row.innerHTML = `
-            <td>${entry.device || "Unknown"}</td>
-            <td>${entry.latitude}</td>
-            <td>${entry.longitude}</td>
-            <td>${new Date(entry.timestamp).toLocaleString()}</td>
-          `;
-
-          const marker = new google.maps.Marker({
-            position: { lat: entry.latitude, lng: entry.longitude },
-            map: map,
-            title: entry.device || "Unknown",
-          });
-
-          logTable.appendChild(row);
-          dailyCount++;
+        let count = 0;
+        table.innerHTML = "";
+        for (const devId in data) {
+          for (const key in data[devId]) {
+            const log = data[devId][key];
+            const lat = log.lat ?? "undefined";
+            const lng = log.lng ?? "undefined";
+            const ts = log.timestamp ? new Date(log.timestamp).toLocaleString() : "Invalid Date";
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const date = document.getElementById("filterDate").value;
+            const logDate = log.timestamp?.split("T")[0];
+            if (
+              (!search || devId.includes(search) || lat.toString().includes(search) || lng.toString().includes(search)) &&
+              (!date || date === logDate)
+            ) {
+              const row = `<tr><td>${devId}</td><td>${lat}</td><td>${lng}</td><td>${ts}</td></tr>`;
+              table.innerHTML += row;
+              count++;
+              addMarker({ lat: parseFloat(lat), lng: parseFloat(lng) });
+            }
+          }
         }
-
-        document.getElementById("dailyCount").innerText = dailyCount;
-
-        dateFilter.innerHTML = '<option value="">-- Filter by date --</option>';
-        uniqueDates.forEach(date => {
-          const opt = document.createElement("option");
-          opt.value = date;
-          opt.innerText = date;
-          dateFilter.appendChild(opt);
-        });
+        logCount.textContent = `Daily logs: ${count}`;
       });
     }
 
     function exportCSV() {
       let csv = "Device,Latitude,Longitude,Timestamp\n";
-      document.querySelectorAll("#logTable tr").forEach(row => {
-        const cols = row.querySelectorAll("td");
-        if (cols.length) {
-          csv += Array.from(cols).map(col => col.innerText).join(",") + "\n";
-        }
-      });
-
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "gps_logs.csv";
-      link.click();
-    }
-
-    function filterByDate() {
-      const selectedDate = document.getElementById("dateFilter").value;
       const rows = document.querySelectorAll("#logTable tr");
       rows.forEach(row => {
-        const timeCol = row.querySelectorAll("td")[3];
-        if (!timeCol) return;
-
-        const rowDate = new Date(timeCol.innerText).toLocaleDateString();
-        row.style.display = (selectedDate === "" || rowDate === selectedDate) ? "" : "none";
+        const cells = row.querySelectorAll("td");
+        const line = [...cells].map(cell => cell.innerText).join(",");
+        csv += line + "\n";
       });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      saveAs(blob, 'location_logs.csv');
     }
 
-    document.getElementById("searchBox").addEventListener("input", function () {
-      const val = this.value.toLowerCase();
-      document.querySelectorAll("#logTable tr").forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(val) ? "" : "none";
+    let map, markers = [];
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 7.5, lng: 5.2 },
+        zoom: 6,
       });
-    });
-  </script>
-</body>
-  </html>
+    }
+    function addMarker(position) {
+      if (position.lat && position.lng) {
+        const marker = new google.maps.Marker({ position, map });
+        markers.push(marker);
+      }
+    }
+    document.getElementById("searchInput").addEventListener("input", loadLogs);
+    document.getElementById("filterDate").addEventListener("change", loadLogs);
+  </script>  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw&callback=initMap"></script></body>
+      </html>
