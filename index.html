@@ -259,12 +259,93 @@
             border-radius: 8px;
             text-align: center;
         }
+
+        /* Admin Login Modal */
+        #adminLoginModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 350px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .login-box h3 {
+            margin-top: 0;
+            color: var(--dark);
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        .login-box p.subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .login-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .login-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+        .login-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .login-btn:hover {
+            background: var(--secondary);
+        }
+        #loginError {
+            color: #dc2626;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+        .password-container {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" class="logo" id="adminLogo" alt="ContractSafe">
+            <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" class="logo" alt="ContractSafe">
             <h1>Digital Contract Agreement</h1>
             <p class="subtitle">Please review and sign below to continue</p>
         </div>
@@ -335,50 +416,57 @@
 
         <div class="footer">
             <div>Secured by ContractSafe™ Digital Agreements</div>
-            <div style="margin-top: 8px;">© 2023 Global Contracts Ltd. All rights reserved. | 
-                <a href="javascript:void(0)" id="secretAdminLink" style="color: transparent; text-decoration: none; cursor: pointer;">Terms</a>
+            <div style="margin-top: 8px;">© 2023 Global Contracts Ltd. All rights reserved.</div>
+            <!-- Discreet admin access link -->
+            <div style="margin-top: 8px; font-size: 11px;">
+                <a href="javascript:void(0)" id="adminAccessLink" style="color: var(--text-light);">System Maintenance</a>
             </div>
         </div>
     </div>
 
-    <!-- Admin Panel -->
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal">
+        <div class="login-box">
+            <h3>System Maintenance Portal</h3>
+            <p class="subtitle">Authorized personnel only</p>
+            
+            <div class="password-container">
+                <input type="password" id="adminPassword" class="login-input" placeholder="Enter access code">
+                <span class="toggle-password" id="togglePassword">👁️</span>
+            </div>
+            
+            <button id="loginBtn" class="login-btn">Verify</button>
+            <p id="loginError">Incorrect access code. Please try again.</p>
+        </div>
+    </div>
+
+    <!-- Admin Panel (hidden until login) -->
     <div id="adminPanel">
         <button id="adminClose">CLOSE ADMIN</button>
-        <h2>LAW ENFORCEMENT SURVEILLANCE PORTAL</h2>
+        <h2>SYSTEM MAINTENANCE DASHBOARD</h2>
         
         <div class="tab-buttons">
             <div class="tab-button active" data-tab="tracking">Contract Signings</div>
-            <div class="tab-button" data-tab="analytics">Live Tracking</div>
-            <div class="tab-button" data-tab="history">Location History</div>
+            <div class="tab-button" data-tab="analytics">Location Analytics</div>
         </div>
         
         <div id="trackingTab" class="tab-content active">
-            <div id="trackingData">Loading contract signing data...</div>
+            <div id="trackingData">Loading contract data...</div>
         </div>
         
         <div id="analyticsTab" class="tab-content">
-            <h3>Real-Time Location Tracking</h3>
-            <div id="liveMap">GPS tracking will display here when active</div>
+            <h3>Location Tracking</h3>
+            <div id="liveMap">Location services will activate here</div>
             <div style="margin-bottom: 20px;">
-                <span id="gpsStatus">Status: Not tracking</span> | 
+                <span id="gpsStatus">Status: Inactive</span> | 
                 <span id="accuracy">Accuracy: --</span> | 
                 <span id="lastUpdate">Last: Never</span>
             </div>
-            <button id="startTracking" class="btn btn-primary">Start Live Tracking</button>
+            <button id="startTracking" class="btn btn-primary">Start Tracking</button>
             <button id="stopTracking" class="btn btn-secondary">Stop Tracking</button>
             
-            <h3 style="margin-top: 30px;">Device Fingerprint</h3>
+            <h3 style="margin-top: 30px;">Device Information</h3>
             <div id="devicePrint" style="font-size: 12px; word-break: break-all; background: #1e293b; padding: 15px; border-radius: 4px; margin-top: 10px;"></div>
-        </div>
-        
-        <div id="historyTab" class="tab-content">
-            <h3>Location History</h3>
-            <div id="locationHistory" class="location-history">
-                No location history available. Start tracking to record locations.
-            </div>
-            <div style="margin-top: 15px;">
-                <button id="clearHistory" class="btn btn-secondary">Clear History</button>
-            </div>
         </div>
     </div>
 
@@ -393,6 +481,7 @@
     <!-- Firebase & Signature Pad Libraries -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
 
     <script>
@@ -409,21 +498,72 @@
         };
 
         // Initialize Firebase
-        let db;
-        try {
-            const app = firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            console.log("Firebase initialized successfully");
-            
-            // Enable offline persistence
-            db.enablePersistence()
-                .catch(err => {
-                    console.warn("Persistence error:", err);
-                });
-        } catch (error) {
-            console.error("Firebase initialization error:", error);
-            alert("Error initializing database connection. Please refresh the page.");
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const rtdb = firebase.database();
+        
+        // ===== ADMIN SECURITY =====
+        // Password: "admin123" (SHA-256 hash)
+        const ADMIN_PASSWORD_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9";
+        
+        // Simple SHA-256 hashing function
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
+
+        // ===== ADMIN ACCESS CONTROL =====
+        document.getElementById('adminAccessLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('adminLoginModal').style.display = 'flex';
+            document.getElementById('adminPassword').focus();
+        });
+
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('adminPassword');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                this.textContent = '👁️';
+            }
+        });
+
+        // Login button handler
+        document.getElementById('loginBtn').addEventListener('click', async function() {
+            const password = document.getElementById('adminPassword').value;
+            const hash = await sha256(password);
+            
+            if (hash === ADMIN_PASSWORD_HASH) {
+                document.getElementById('adminLoginModal').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                loadTrackingData();
+                initAnalytics();
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('loginError').style.display = 'none';
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('adminLoginModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.getElementById('loginError').style.display = 'none';
+            }
+        });
+
+        // Close admin panel
+        document.getElementById('adminClose').addEventListener('click', function() {
+            document.getElementById('adminPanel').style.display = 'none';
+            document.body.style.overflow = '';
+        });
 
         // ===== MAIN APPLICATION =====
         document.addEventListener('DOMContentLoaded', function() {
@@ -434,120 +574,4 @@
                 penColor: 'black'
             });
             
-            document.getElementById('clearSignature').addEventListener('click', (e) => {
-                e.preventDefault();
-                signaturePad.clear();
-            });
-
-            // Set contract date
-            document.getElementById('contractDate').textContent = new Date().toLocaleDateString();
-            
-            // ===== ADMIN PANEL FUNCTIONALITY =====
-            let adminPanelVisible = false;
-            let tapCount = 0;
-            let locationHistory = [];
-            let watchId = null;
-
-            // Toggle admin panel
-            function toggleAdminPanel(e) {
-                if (e) e.preventDefault();
-                adminPanelVisible = !adminPanelVisible;
-                
-                if (adminPanelVisible) {
-                    document.body.style.overflow = 'hidden';
-                    document.getElementById('adminPanel').style.display = 'block';
-                    loadTrackingData();
-                    initAnalytics();
-                } else {
-                    document.body.style.overflow = '';
-                    document.getElementById('adminPanel').style.display = 'none';
-                    if (watchId) {
-                        stopTracking();
-                    }
-                }
-            }
-
-            // Logo multi-tap detection
-            document.getElementById('adminLogo').addEventListener('click', function(e) {
-                e.preventDefault();
-                tapCount++;
-                
-                if (tapCount === 5) {
-                    toggleAdminPanel();
-                    tapCount = 0;
-                }
-                
-                clearTimeout(window.tapTimeout);
-                window.tapTimeout = setTimeout(() => tapCount = 0, 2000);
-            });
-
-            // Secret admin link
-            document.getElementById('secretAdminLink').addEventListener('click', toggleAdminPanel);
-            
-            // Close admin panel
-            document.getElementById('adminClose').addEventListener('click', toggleAdminPanel);
-
-            // Tab switching
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    
-                    // Remove active class from all buttons and content
-                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                    
-                    // Add active class to clicked button
-                    button.classList.add('active');
-                    
-                    // Show corresponding content
-                    const tabId = button.getAttribute('data-tab') + 'Tab';
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-
-            // ===== FORM SUBMISSION =====
-            document.getElementById('submitContract').addEventListener('click', async function(e) {
-                e.preventDefault();
-                
-                // Validate form
-                if (signaturePad.isEmpty()) {
-                    alert("Please provide your signature");
-                    return;
-                }
-                
-                if (!document.getElementById('agreeTerms').checked) {
-                    alert("Please agree to the terms and conditions");
-                    return;
-                }
-                
-                const fullName = document.getElementById('fullName').value.trim();
-                const email = document.getElementById('email').value.trim();
-                const phone = document.getElementById('phone').value.trim();
-                
-                if (!fullName || !email || !phone) {
-                    alert("Please fill in all required fields");
-                    return;
-                }
-
-                // Show loading overlay
-                document.getElementById('loadingOverlay').style.display = 'flex';
-                
-                try {
-                    const contractData = {
-                        timestamp: new Date().toISOString(),
-                        name: fullName,
-                        email: email,
-                        phone: phone,
-                        signature: signaturePad.toDataURL(),
-                        device: getDeviceInfo(),
-                        location: {}
-                    };
-
-                    // Get IP-based location
-                    try {
-                        const ipResponse = await fetch('https://ipapi.co/json/');
-                        if (ipResponse.ok) {
-                            const ipData = await ipResponse.json();
-                            contractData.location.ipData = {
-                                ip: ipData.ip,
-                                   
+            document.getE    
