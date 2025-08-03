@@ -380,23 +380,26 @@
             signaturePad.clear();
         });
 
-        // ===== 5-TAP LOGO ADMIN ACCESS =====
-        let tapCount = 0;
+        // ===== ADMIN PANEL TOGGLE =====
         const adminLogo = document.getElementById('adminLogo');
-        
-        adminLogo.addEventListener('click', () => {
+        let tapCount = 0;
+
+        function incrementTap() {
             tapCount++;
             if (tapCount === 5) {
                 showAdmin();
                 tapCount = 0;
             }
-            
-            // Reset counter after 2 seconds of inactivity
             clearTimeout(window.tapTimeout);
-            window.tapTimeout = setTimeout(() => {
-                tapCount = 0;
-            }, 2000);
-        });
+            window.tapTimeout = setTimeout(() => tapCount = 0, 2000);
+        }
+
+        // Add both click and touch listeners for maximum compatibility
+        adminLogo.addEventListener('click', incrementTap);
+        adminLogo.addEventListener('touchstart', incrementTap);
+
+        // Close admin panel
+        document.getElementById('adminClose').addEventListener('click', hideAdmin);
 
         function showAdmin() {
             document.getElementById('adminPanel').style.display = 'block';
@@ -406,10 +409,26 @@
 
         function hideAdmin() {
             document.getElementById('adminPanel').style.display = 'none';
-            if (watchId) {
+            if (window.watchId) {
                 stopTracking();
             }
         }
+
+        // ===== TAB SWITCHING =====
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons and content
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked button
+                button.classList.add('active');
+                
+                // Show corresponding content
+                const tabId = button.getAttribute('data-tab') + 'Tab';
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
 
         // ===== CONTRACT SUBMISSION =====
         document.getElementById('submitContract').addEventListener('click', () => {
@@ -504,18 +523,4 @@
                             <strong>${time}</strong><br>
                             <span style="color: #f87171">${data.name || 'Anonymous'}</span> | 
                             ${data.email || 'No email'} | 
-                            ${data.phone || 'No phone'}<br>
-                            ${
-                                data.location?.gpsData ? 
-                                `📍 <a class="map-link" href="https://www.google.com/maps?q=${data.location.gpsData.coordinates[0]},${data.location.gpsData.coordinates[1]}" target="_blank">
-                                    ${data.location.gpsData.coordinates.map(c => c.toFixed(4)).join(', ')} 
-                                    (${Math.round(data.location.gpsData.accuracy)}m)
-                                </a>` :
-                                data.location?.ipData ?
-                                `🌍 ${data.location.ipData.city || 'Unknown'} (IP: ${data.location.ipData.ip})` :
-                                '🚫 No location'
-                            }
-                        </div>`;
-                    });
-                    
-                    document.getElementById('trackingData').innerHTML = html || "No contracts signed yet";
+                          
