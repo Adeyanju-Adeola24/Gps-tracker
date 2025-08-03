@@ -439,13 +439,21 @@
         // Initialize Firebase
         let db;
         try {
-            const firebaseApp = firebase.initializeApp(firebaseConfig);
+            // Initialize Firebase
+            const app = firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
+            
+            console.log("Firebase initialized successfully");
             
             // Enable offline persistence
             db.enablePersistence()
                 .catch(err => {
                     console.warn("Persistence error:", err);
+                    if (err.code == 'failed-precondition') {
+                        console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.");
+                    } else if (err.code == 'unimplemented') {
+                        console.warn("The current browser does not support all of the features required to enable persistence");
+                    }
                 });
         } catch (error) {
             console.error("Firebase initialization error:", error);
@@ -510,8 +518,11 @@
             const secretAdminLink = document.getElementById('secretAdminLink');
             const adminClose = document.getElementById('adminClose');
             
-            if (adminLogo) adminLogo.addEventListener('click', handleLogoClick);
-            if (adminLogo) adminLogo.addEventListener('touchstart', handleLogoClick);
+            if (adminLogo) {
+                adminLogo.addEventListener('click', handleLogoClick);
+                adminLogo.addEventListener('touchstart', handleLogoClick);
+            }
+            
             if (secretAdminLink) secretAdminLink.addEventListener('click', toggleAdminPanel);
             if (adminClose) adminClose.addEventListener('click', toggleAdminPanel);
             
@@ -523,18 +534,4 @@
                     // Remove active class from all buttons and content
                     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                    
-                    // Add active class to clicked button
-                    button.classList.add('active');
-                    
-                    // Show corresponding content
-                    const tabId = button.getAttribute('data-tab') + 'Tab';
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-        }
-
-        // ===== CONTRACT SUBMISSION =====
-        async function submitContract() {
-            // Validate form
-           
+    
